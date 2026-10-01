@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Builds the GeoGebra "graphing" app bundle that OLMS self-hosts (Linear OLM-2025)
+# from the Sandbox module (runs inside <iframe sandbox="allow-scripts">)
 # and packs it as dist/geogebra-web3d-<commit>.tar.gz plus a .sha256 file.
 #
 # Layout inside the archive (OLMS serves it under /vendor/geogebra/<commit>/):
@@ -18,7 +19,7 @@ if [[ -n $(git -C "$root" status --porcelain --untracked-files=no) ]]; then
 fi
 
 (cd "$root/source/web" && ../../gradlew :web:gwtCompile :web:compileSass \
-	-Pgmodule=org.geogebra.web.SuperWeb --console=plain)
+	-Pgmodule=org.geogebra.web.Sandbox --console=plain)
 
 war="$root/source/web/web/war"
 out="$root/dist"

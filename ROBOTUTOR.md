@@ -10,6 +10,7 @@ in, never rebased away.
 | Area | Change | Why |
 | --- | --- | --- |
 | Repaint loop (`web-common/.../main/TimerSystemW.java`, `EuclidianViewW.doRepaint`) | Ticks on `requestAnimationFrame` instead of a 16 ms `setInterval`; views paint synchronously inside the tick. | Repaints track the display's refresh rate and phase instead of beating against vsync, and lose a frame of latency. |
+| Sandboxed pages (`web/.../Sandbox.gwt.xml`, `web-dev/.../linker/MainWindowLinker.java`) | New `Sandbox` module (renamed `web3d`): installs code in the page window with script tags instead of a hidden iframe, assigns `$wnd` without an inline script, and has no dev-mode redirect hook. | Inside `<iframe sandbox="allow-scripts">` (opaque origin) the default linker's nested iframe is unreachable, and the dev-mode hook reads `sessionStorage`, which throws. Host CSP: `script-src 'nonce-…' 'strict-dynamic'` (GeoGebra injects its bundled libraries as inline scripts). |
 | Animations (`shared/common/.../kernel/AnimationManager.java`) | Cap 30 → 60 fps; steps run on a frame-synced timer (`UtilFactory.newFrameTimer`, web: `GFrameTimerW`); the timer is only rescheduled when its delay changes. | Upstream restarted the interval on nearly every step, and capped animation at 30 fps. |
 
 Measured on headless Chromium at 60 Hz (slider animating two functions and a point;
@@ -22,8 +23,9 @@ Requires JDK 17 (on Archidesk: `~/.local/lib/jdk17`, declared in system-config).
 
 ```sh
 cd source/web
-JAVA_HOME=~/.local/lib/jdk17 ../../gradlew :web:gwtCompile :web:compileSass -Pgmodule=org.geogebra.web.SuperWeb
+JAVA_HOME=~/.local/lib/jdk17 ../../gradlew :web:gwtCompile :web:compileSass -Pgmodule=org.geogebra.web.Sandbox
 # output: web/war/web3d (the "graphing" app codebase) and web/war/css
+# (-Pgmodule=org.geogebra.web.SuperWeb builds the unsandboxed upstream variant)
 ```
 
 ## Licensing

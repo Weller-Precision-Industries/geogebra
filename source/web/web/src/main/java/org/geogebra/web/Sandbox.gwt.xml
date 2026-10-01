@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Robotutor fork: the Web3D app ("web3d" codebase, e.g. appName "graphing") for
+  pages sandboxed with <iframe sandbox="allow-scripts">. Code installs in the page
+  window (no nested iframe) and there is no dev-mode redirect hook, which reads
+  sessionStorage and throws in an opaque origin.
+-->
+<module rename-to='web3d'>
+  <inherits name='org.geogebra.web.Web3D'/>
+  <inherits name='org.geogebra.web.MainWindowLinker'/>
+</module>
