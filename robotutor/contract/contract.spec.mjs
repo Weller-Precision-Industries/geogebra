@@ -62,7 +62,7 @@ test.beforeAll(async () => {
 test.afterAll(() => new Promise((done) => server.close(done)));
 
 /** Opens the host page and waits until the calculator inside the sandbox is ready. */
-async function openCalculator(page) {
+async function openCalculator(page, params = {}) {
 	const violations = [];
 	page.on("console", (message) => {
 		if (/Content Security Policy|Sandbox access violation|Refused to/i.test(message.text())) {
@@ -70,7 +70,10 @@ async function openCalculator(page) {
 		}
 	});
 	page.on("pageerror", (error) => violations.push(`pageerror: ${error.message}`));
-	await page.goto(`${origin}/host.html`);
+	page.on("console", (message) => {
+		if (/unknown disabled command/i.test(message.text())) violations.push(message.text());
+	});
+	await page.goto(`${origin}/host.html?${new URLSearchParams(params)}`);
 	const frame = page.frame({ url: /\/frame\.html/ });
 	await frame.waitForFunction(() => Boolean(window.__api), null, { timeout: 30_000 });
 	return { frame, locator: page.frameLocator("#calculator"), violations };
@@ -174,6 +177,72 @@ test("geometryCommands admits geometry, transformation and conic commands in the
 	]);
 });
 
+test("a curated toolbar offers only the listed click tools, and the Point tool plots by clicking", async ({
+	page,
+}) => {
+	const { frame, locator, violations } = await openCalculator(page, {
+		showToolBar: "true",
+		customToolBar: "0 1 15 | 6",
+		dataViews: "false",
+	});
+	// No Table or Spreadsheet view in the side rail.
+	const rail = locator.locator("button.tabButton");
+	await expect(rail).toHaveText(["Algebra", "Tools"]);
+	await rail.filter({ hasText: "Tools" }).click();
+	const tool = (name) => locator.locator(`button[aria-label^="${name}. "]`).filter({ hasText: name });
+	for (const name of ["Move", "Point", "Segment", "Delete"]) await expect(tool(name)).toBeVisible();
+	for (const name of ["Line", "Polygon", "Reflect about Line", "Intersect"]) await expect(tool(name)).toHaveCount(0);
+	await tool("Point").click();
+	// The graph occupies the right of the frame, beside the side panel.
+	const box = await page.locator("#calculator").boundingBox();
+	await page.mouse.click(box.x + box.width * 0.75, box.y + box.height * 0.3);
+	await expect.poll(() => frame.evaluate(() => window.__api.getAllObjectNames())).toHaveLength(1);
+	expect(await frame.evaluate(() => window.__api.getObjectType(window.__api.getAllObjectNames()[0]))).toBe("point");
+	expect(violations).toEqual([]);
+});
+
+test("disabledCommands and previewPoints=false stop the calculator doing the learner's work", async ({ page }) => {
+	const created = async (frame) =>
+		frame.evaluate(() => {
+			const api = window.__api;
+			api.evalCommand("f(x)=2x-2");
+			api.evalCommand("g(x)=x+1");
+			const out = {};
+			for (const [label, command] of [
+				["I", "Intersect(f,g)"],
+				["R", "Root(f)"],
+				["s", "Slope(Line((0,0),(1,2)))"],
+				["M", "Reflect((1,2),xAxis)"],
+				["S", "Segment((0,0),(1,1))"],
+			]) {
+				api.evalCommand(`${label}=${command}`);
+				out[label] = api.exists(label);
+			}
+			return out;
+		});
+	const itemMenu = async (locator) => {
+		await locator.locator("button.more").first().click();
+		const items = await locator.getByRole("menuitem").allTextContents();
+		await page.keyboard.press("Escape");
+		return items.map((item) => item.trim());
+	};
+
+	const open = await openCalculator(page, { geometryCommands: "true" });
+	expect(await created(open.frame)).toEqual({ I: true, R: true, s: true, M: true, S: true });
+	expect(await itemMenu(open.locator)).toEqual(expect.arrayContaining(["Special Points"]));
+
+	const guided = await openCalculator(page, {
+		geometryCommands: "true",
+		previewPoints: "false",
+		disabledCommands: "Intersect,Root,Slope,Reflect",
+	});
+	expect(await created(guided.frame)).toEqual({ I: false, R: false, s: false, M: false, S: true });
+	const items = await itemMenu(guided.locator);
+	expect(items).not.toEqual(expect.arrayContaining(["Special Points"]));
+	expect(items.filter((item) => /^(Solve|Statistics)$/.test(item))).toEqual([]);
+	expect(guided.violations).toEqual([]);
+});
+
 test("a renamed given keeps its value when the learner reuses its original label", async ({ page }) => {
 	// setFixed only stops dragging: typing "A=(2,3)" or "f(x)=…" still redefines a fixed object
 	// with that label. OLMS therefore renames each given to a reserved label (Given1, …) and hides it.
@@ -247,6 +316,32 @@ test("tabExit reports leaving at both ends instead of trapping keyboard focus", 
 	await pressUntilExit("Tab", "forward");
 	await locator.getByText("Input…").click();
 	await pressUntilExit("Shift+Tab", "backward");
+});
+
+test("with the toolbar shown, Tab and Shift+Tab still hand keyboard focus to the host page", async ({ page }) => {
+	// The rail and undo buttons join GeoGebra's focus order; none of them may trap focus.
+	const { locator } = await openCalculator(page, {
+		showToolBar: "true",
+		customToolBar: "0 1 15 | 6",
+		dataViews: "false",
+	});
+	await locator.getByText("Input…").click();
+	for (const input of ["y=2x+1", "A=(2,3)"]) {
+		await page.keyboard.type(input, { delay: 20 });
+		await page.keyboard.press("Enter");
+	}
+	const pressUntilHost = async (key, id) => {
+		for (let press = 0; press < 12; press++) {
+			await page.keyboard.press(key);
+			// The hand-off is an asynchronous client event and message.
+			await page.waitForTimeout(100);
+			if ((await page.evaluate(() => document.activeElement?.id)) === id) return;
+		}
+		throw new Error(`${key} never reached #${id}`);
+	};
+	await pressUntilHost("Tab", "after");
+	await locator.getByText("Input…").click();
+	await pressUntilHost("Shift+Tab", "before");
 });
 
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {

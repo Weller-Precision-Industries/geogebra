@@ -91,8 +91,14 @@ public final class ContextMenuAVItemMore
 				getApp().getSubAppCode(),
 				mApp.getSettings().getAlgebra(),
 				contextMenuFilters);
-		if (!getApp().showToolBar()) {
+		if (!getApp().showToolBar() || !getApp().getConfig().hasTableView()) {
 			actions.remove(AlgebraContextMenuItem.CreateTableValues);
+		}
+		if (!getApp().getConfig().hasPreviewPoints()) {
+			// Robotutor: without previewed special points, the menu must not compute them either.
+			actions.remove(AlgebraContextMenuItem.SpecialPoints);
+			actions.remove(AlgebraContextMenuItem.Solve);
+			actions.remove(AlgebraContextMenuItem.Statistics);
 		}
 		for (AlgebraContextMenuItem action : actions) {
 			addAction(action);

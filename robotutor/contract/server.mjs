@@ -56,7 +56,7 @@ export function startServer({ bundleDir, commit, port = 0 }) {
 			const html = (await readFile(join(here, "frame.html"), "utf8")).replaceAll("__CSP_NONCE__", nonce);
 			return send(200, html, { "Content-Type": TYPES[".html"], "Content-Security-Policy": frameCsp(nonce) });
 		}
-		if (url.pathname === "/frame.js") {
+		if (url.pathname === "/frame.js" || url.pathname === "/host.js") {
 			const body = (await readFile(join(here, url.pathname.slice(1)), "utf8")).replaceAll("__COMMIT__", commit);
 			return send(200, body, { "Content-Type": TYPES[".js"], "Cross-Origin-Resource-Policy": "cross-origin" });
 		}

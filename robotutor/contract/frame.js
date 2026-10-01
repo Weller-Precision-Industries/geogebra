@@ -30,6 +30,10 @@
 		disableJavaScript: "true",
 		useBrowserForJS: "false",
 	};
+	// Tests override parameters through the page's query string, e.g. ?previewPoints=false.
+	new URLSearchParams(window.location.search).forEach(function (value, key) {
+		params[key] = value;
+	});
 	var host = document.getElementById("calculator");
 	Object.keys(params).forEach(function (key) {
 		host.setAttribute("data-param-" + key.toLowerCase(), params[key]);
@@ -39,6 +43,8 @@
 		window.renderGGBElement(host, function (api) {
 			api.registerClientListener(function (event) {
 				window.__events.push({ type: event.type, argument: event.argument });
+				// As OLMS's frame does: the sandboxed frame cannot focus its host, so it asks.
+				if (event.type === "tabExit") window.parent.postMessage({ type: "tab-exit", direction: event.argument }, "*");
 			});
 			window.__api = api;
 		});

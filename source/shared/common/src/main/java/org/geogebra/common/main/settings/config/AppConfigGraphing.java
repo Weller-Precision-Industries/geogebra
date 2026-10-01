@@ -29,10 +29,12 @@ import org.geogebra.common.kernel.StringTemplate;
 import org.geogebra.common.kernel.arithmetic.SymbolicMode;
 import org.geogebra.common.kernel.arithmetic.filter.ExpressionFilter;
 import org.geogebra.common.kernel.arithmetic.filter.graphing.GraphingExpressionFilterFactory;
+import org.geogebra.common.kernel.commands.Commands;
 import org.geogebra.common.kernel.commands.filter.CommandArgumentFilter;
 import org.geogebra.common.kernel.commands.filter.GraphingCommandArgumentFilter;
 import org.geogebra.common.kernel.commands.selector.CommandFilter;
 import org.geogebra.common.kernel.commands.selector.CommandFilterFactory;
+import org.geogebra.common.kernel.commands.selector.CommandNameFilter;
 import org.geogebra.common.kernel.geos.properties.FillType;
 import org.geogebra.common.kernel.parser.function.ParserFunctionsFactory;
 import org.geogebra.common.main.App;
@@ -53,6 +55,9 @@ import org.jspecify.annotations.Nullable;
 public class AppConfigGraphing extends AbstractAppConfig {
 
 	private boolean geometryCommands;
+	private boolean dataViews = true;
+	private boolean previewPoints = true;
+	private Commands[] disabledCommands = new Commands[0];
 
 	public AppConfigGraphing() {
 		super(GeoGebraConstants.GRAPHING_APPCODE);
@@ -112,7 +117,7 @@ public class AppConfigGraphing extends AbstractAppConfig {
 
 	@Override
 	public boolean hasPreviewPoints() {
-		return true;
+		return previewPoints;
 	}
 
 	@Override
@@ -187,7 +192,7 @@ public class AppConfigGraphing extends AbstractAppConfig {
 
 	@Override
 	public boolean hasTableView() {
-		return true;
+		return dataViews;
 	}
 
 	@Override
@@ -236,10 +241,47 @@ public class AppConfigGraphing extends AbstractAppConfig {
 		return this;
 	}
 
+	/**
+	 * Robotutor: no Table or Spreadsheet view, for an embedded answer surface that only
+	 * needs the algebra input, the tools and the graph.
+	 * @return this config
+	 */
+	public AppConfigGraphing withoutDataViews() {
+		dataViews = false;
+		return this;
+	}
+
+	/**
+	 * Robotutor: no special points (roots, extrema, intersections) previewed on selection,
+	 * so the calculator does not find them for a learner who is meant to.
+	 * @return this config
+	 */
+	public AppConfigGraphing withoutPreviewPoints() {
+		previewPoints = false;
+		return this;
+	}
+
+	/**
+	 * Robotutor: refuse these commands (and their aliases) on top of the app's filter, so a
+	 * question can require the learner to do that step themselves.
+	 * Must be called before the command filter is first used.
+	 * @param commands commands to refuse
+	 * @return this config
+	 */
+	public AppConfigGraphing withDisabledCommands(Commands... commands) {
+		disabledCommands = Arrays.copyOf(commands, commands.length);
+		return this;
+	}
+
 	@Override
 	public CommandFilter createCommandFilter() {
-		return geometryCommands ? CommandFilterFactory.createNoCasCommandFilter()
+		CommandFilter appFilter = geometryCommands ? CommandFilterFactory.createNoCasCommandFilter()
 				: CommandFilterFactory.createGraphingCommandFilter();
+		if (disabledCommands.length == 0) {
+			return appFilter;
+		}
+		CommandFilter disabled = new CommandNameFilter(true, disabledCommands);
+		return command -> appFilter.isCommandAllowed(command) && disabled.isCommandAllowed(command);
 	}
 
 	@Override
@@ -371,6 +413,6 @@ public class AppConfigGraphing extends AbstractAppConfig {
 
 	@Override
 	public boolean hasSpreadsheetView() {
-		return true;
+		return dataViews;
 	}
 }
