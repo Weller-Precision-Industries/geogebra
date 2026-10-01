@@ -33,6 +33,8 @@ import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.main.SelectionManager;
+import org.geogebra.common.plugin.Event;
+import org.geogebra.common.plugin.EventType;
 import org.geogebra.web.html5.main.AppW;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -100,6 +102,9 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 		for (FocusableComponent entry : components) {
 			if (entry.hasFocus()) {
 				if (!entry.focusNext()) {
+					if (tabExits()) {
+						return focusNextVisible(components.higher(entry), false) || exitFocus(false);
+					}
 					return focusFirstVisible(findNext(entry), entry);
 				}
 				return true;
@@ -140,6 +145,36 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 		return false;
 	}
 
+	private boolean tabExits() {
+		return app.getAppletParameters().getDataParamTabExit();
+	}
+
+	/**
+	 * Focuses the first visible component from {@code entry} onwards in one direction,
+	 * without wrapping around.
+	 * @return false at the end of the order
+	 */
+	private boolean focusNextVisible(@Nullable FocusableComponent entry, boolean reverse) {
+		FocusableComponent nextEntry = entry;
+		while (nextEntry != null) {
+			if (nextEntry.focusIfVisible(reverse)) {
+				return true;
+			}
+			nextEntry = reverse ? components.lower(nextEntry) : components.higher(nextEntry);
+		}
+		return false;
+	}
+
+	/**
+	 * A sandboxed or cross-origin applet cannot focus its host page, and the browser's
+	 * default Tab would stay inside the applet's document; ask the host to take focus.
+	 * @return true: the key press is handled
+	 */
+	private boolean exitFocus(boolean reverse) {
+		app.dispatchEvent(new Event(EventType.TAB_EXIT, null, reverse ? "backward" : "forward"));
+		return true;
+	}
+
 	private FocusableComponent findNext(FocusableComponent entry) {
 		FocusableComponent nextEntry = components.higher(entry);
 		if (nextEntry == null) {
@@ -162,6 +197,9 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 		for (FocusableComponent entry : components) {
 			if (entry.hasFocus()) {
 				if (!entry.focusPrevious()) {
+					if (tabExits()) {
+						return focusNextVisible(components.lower(entry), true) || exitFocus(true);
+					}
 					return focusLastVisible(findPrevious(entry), entry);
 				}
 				return true;

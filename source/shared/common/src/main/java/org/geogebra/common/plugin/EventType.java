@@ -191,6 +191,12 @@ public enum EventType {
 	 */
 	CLOSE_KEYBOARD("closeKeyboard"),
 
+	/**
+	 * Tab moved past the last control (argument "forward") or Shift+Tab before the first
+	 * ("backward") with the tabExit applet parameter; the host page should take focus.
+	 */
+	TAB_EXIT("tabExit"),
+
 	/** start animation event */
 	START_ANIMATION("startAnimation"),
 
