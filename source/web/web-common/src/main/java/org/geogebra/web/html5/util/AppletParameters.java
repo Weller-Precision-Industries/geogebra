@@ -158,6 +158,16 @@ public class AppletParameters {
 	}
 
 	/**
+	 * Whether Tab past the last control (or Shift+Tab before the first) leaves the
+	 * applet instead of wrapping around, so keyboard users can reach the host page.
+	 *
+	 * @return the data-param-tabExit (default: false, upstream wrap-around)
+	 */
+	public boolean getDataParamTabExit() {
+		return getBoolDataParam("tabExit", false);
+	}
+
+	/**
 	 * Determines if the "data-param-enableRightClick" article attribute is set
 	 * to true
 	 *
