@@ -29,7 +29,15 @@ public final class GraphingActivity extends BaseActivity {
 	 * Graphing activity
 	 */
 	public GraphingActivity() {
-		super(new AppConfigGraphing());
+		this(false);
+	}
+
+	/**
+	 * @param geometryCommands whether to allow every non-CAS command (Robotutor)
+	 */
+	public GraphingActivity(boolean geometryCommands) {
+		super(geometryCommands ? new AppConfigGraphing().withGeometryCommands()
+				: new AppConfigGraphing());
 	}
 
 	@Override

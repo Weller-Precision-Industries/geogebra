@@ -158,6 +158,16 @@ public class AppletParameters {
 	}
 
 	/**
+	 * Robotutor: in the graphing app, allow every non-CAS command (as in the Geometry app)
+	 * instead of the graphing app's restricted set.
+	 *
+	 * @return the data-param-geometryCommands (default: false)
+	 */
+	public boolean getDataParamGeometryCommands() {
+		return getBoolDataParam("geometryCommands", false);
+	}
+
+	/**
 	 * Whether Tab past the last control (or Shift+Tab before the first) leaves the
 	 * applet instead of wrapping around, so keyboard users can reach the host page.
 	 *

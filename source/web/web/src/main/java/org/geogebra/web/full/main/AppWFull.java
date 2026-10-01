@@ -466,7 +466,7 @@ public class AppWFull extends AppW implements HasKeyboard, MenuViewListener {
 		}
 		switch (appletParameters.getDataParamAppName()) {
 			case GRAPHING_APPCODE:
-				activity = new GraphingActivity();
+				activity = new GraphingActivity(appletParameters.getDataParamGeometryCommands());
 				break;
 			case GEOMETRY_APPCODE:
 				activity = new GeometryActivity();

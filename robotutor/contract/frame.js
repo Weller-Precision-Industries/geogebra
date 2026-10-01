@@ -26,6 +26,7 @@
 		errorDialogsActive: "false",
 		showKeyboardOnFocus: "false",
 		tabExit: "true",
+		geometryCommands: "true",
 		disableJavaScript: "true",
 		useBrowserForJS: "false",
 	};
