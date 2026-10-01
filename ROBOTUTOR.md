@@ -29,6 +29,26 @@ JAVA_HOME=~/.local/lib/jdk17 ../../gradlew :web:gwtCompile :web:compileSass -Pgm
 # (-Pgmodule=org.geogebra.web.SuperWeb builds the unsandboxed upstream variant)
 ```
 
+## Contract and upstream sync
+
+`robotutor/contract/` is a Playwright suite that pins every GeoGebra behaviour OLMS relies on, against a
+built bundle served the way OLMS serves it (sandboxed frame, nonce + `'strict-dynamic'` CSP): the Apps API
+calls OLMS makes, LaTeX in and out, renamed givens surviving a learner reusing their label, the closed
+on-screen keyboard, the graph-only review perspective, `tabExit`, and 60 fps animation.
+
+```sh
+robotutor/check.sh                    # package-web3d.sh for HEAD, then the contract
+node --test robotutor/sync.test.mjs   # sync logic against disposable local repositories
+node robotutor/sync.mjs --check       # merge upstream main in a temporary worktree, build, run the contract
+node robotutor/sync.mjs --check --push  # ...and push automation/geogebra-upstream-sync and open/update its PR
+```
+
+The sync merges `geogebra/geogebra` `main` into `robotutor` on the proposal branch, preserving both histories,
+and records the upstream commit in `robotutor/upstream.json`. It never force-pushes, merges or publishes;
+conflicts stop it with the paths. The PR body states whether the contract passed. Adopting a merge in OLMS
+means publishing a release from the merged commit and bumping OLMS's pin. Hosted Actions are unavailable
+(Linear OLM-1129), so the sync is run by an operator for now.
+
 ## Licensing
 
 Source code is EUPL 1.2: this fork is public, which satisfies its source-availability terms.
