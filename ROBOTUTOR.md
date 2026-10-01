@@ -33,3 +33,10 @@ GeoGebra's UI images, icons, style sheets and translation files are CC BY-NC-SA,
 assembled GeoGebra product is non-commercial unless licensed. Commercial OLMS use relies
 on the GeoGebra commercial licence (Linear OLM-1963); do not ship a build commercially
 without it or without replacing those assets.
+
+## Release bundle for OLMS
+
+`robotutor/package-web3d.sh` builds the graphing app and writes
+`dist/geogebra-web3d-<commit>.tar.gz` plus its `.sha256` file. The archive holds `web3d/`, `css/` (English UI strings
+only) and a `NOTICE`. Each one is published as a GitHub Release (`web3d-<commit>`) on this fork; OLMS pins the
+release URL and checksum and serves the files from `/vendor/geogebra/<commit>/`.
