@@ -137,6 +137,43 @@ test("evaluates LaTeX givens and reads learner objects back as LaTeX", async ({ 
 	expect(result.exists).toEqual([false, false, false]);
 });
 
+test("geometryCommands admits geometry, transformation and conic commands in the graphing app", async ({ page }) => {
+	// Stock graphing filters these out silently; OLMS's prompt promises points, regions and transformations.
+	const { frame } = await openCalculator(page);
+	const created = await frame.evaluate(() => {
+		const api = window.__api;
+		const commands = [
+			"A=(1,1)",
+			"B=(4,1)",
+			"C=(1,3)",
+			"s=Segment(A,B)",
+			"t=Polygon(A,B,C)",
+			"r=Reflect(t,xAxis)",
+			"u=Translate(t,Vector((2,2)))",
+			"c=Circle((0,0),2)",
+			"m=Slope(Line(A,C+(1,0)))",
+			"M=Midpoint(A,B)",
+		];
+		return commands.map((command) => {
+			const label = command.split("=")[0];
+			api.evalCommand(command);
+			return [label, api.exists(label) ? api.getObjectType(label) : null];
+		});
+	});
+	expect(created).toEqual([
+		["A", "point"],
+		["B", "point"],
+		["C", "point"],
+		["s", "segment"],
+		["t", "triangle"],
+		["r", "triangle"],
+		["u", "triangle"],
+		["c", "circle"],
+		["m", "numeric"],
+		["M", "point"],
+	]);
+});
+
 test("a renamed given keeps its value when the learner reuses its original label", async ({ page }) => {
 	// setFixed only stops dragging: typing "A=(2,3)" or "f(x)=…" still redefines a fixed object
 	// with that label. OLMS therefore renames each given to a reserved label (Given1, …) and hides it.

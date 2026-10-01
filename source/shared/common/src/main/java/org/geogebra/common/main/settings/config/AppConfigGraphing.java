@@ -52,6 +52,8 @@ import org.jspecify.annotations.Nullable;
  */
 public class AppConfigGraphing extends AbstractAppConfig {
 
+	private boolean geometryCommands;
+
 	public AppConfigGraphing() {
 		super(GeoGebraConstants.GRAPHING_APPCODE);
 	}
@@ -223,19 +225,31 @@ public class AppConfigGraphing extends AbstractAppConfig {
 		return LabelVisibility.AlwaysOn;
 	}
 
+	/**
+	 * Robotutor: allow every non-CAS command, as the Geometry app does (segments, polygons,
+	 * transformations, slope, midpoint, ...), while keeping the graphing interface.
+	 * Must be called before the command filter is first used.
+	 * @return this config
+	 */
+	public AppConfigGraphing withGeometryCommands() {
+		geometryCommands = true;
+		return this;
+	}
+
 	@Override
 	public CommandFilter createCommandFilter() {
-		return CommandFilterFactory.createGraphingCommandFilter();
+		return geometryCommands ? CommandFilterFactory.createNoCasCommandFilter()
+				: CommandFilterFactory.createGraphingCommandFilter();
 	}
 
 	@Override
 	public CommandArgumentFilter getCommandArgumentFilter() {
-		return new GraphingCommandArgumentFilter();
+		return geometryCommands ? null : new GraphingCommandArgumentFilter();
 	}
 
 	@Override
 	public @Nullable SyntaxFilter newCommandSyntaxFilter() {
-		return new GraphingSyntaxFilter();
+		return geometryCommands ? null : new GraphingSyntaxFilter();
 	}
 
 	@Override
