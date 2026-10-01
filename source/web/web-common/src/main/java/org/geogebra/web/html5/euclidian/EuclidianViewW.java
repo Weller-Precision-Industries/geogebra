@@ -568,7 +568,12 @@ public class EuclidianViewW extends EuclidianView implements EuclidianViewWInter
 	 * schedule a repaint
 	 */
 	public void doRepaint() {
-		DomGlobal.requestAnimationFrame(repaintCallback);
+		if (TimerSystemW.isInFrame()) {
+			// already inside the display frame's repaint tick: paint now
+			doRepaint2();
+		} else {
+			DomGlobal.requestAnimationFrame(repaintCallback);
+		}
 	}
 
 	/**

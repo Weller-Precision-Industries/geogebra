@@ -24,6 +24,7 @@ import org.geogebra.common.util.Prover;
 import org.geogebra.common.util.Reflection;
 import org.geogebra.common.util.URLEncoder;
 import org.geogebra.web.html5.euclidian.profiler.FpsProfilerW;
+import org.geogebra.web.html5.sound.GFrameTimerW;
 import org.geogebra.web.html5.sound.GTimerW;
 import org.geogebra.web.html5.util.HttpRequestW;
 import org.geogebra.web.html5.util.ProverW;
@@ -67,5 +68,10 @@ public class UtilFactoryW extends UtilFactory {
 	@Override
 	public GTimer newTimer(GTimerListener listener, int delay) {
 		return new GTimerW(listener, delay);
+	}
+
+	@Override
+	public GTimer newFrameTimer(GTimerListener listener, int delay) {
+		return new GFrameTimerW(listener, delay);
 	}
 }

@@ -36,8 +36,8 @@ import com.google.j2objc.annotations.Weak;
 public class AnimationManager implements GTimerListener {
 	/** animation time */
 	public static final int STANDARD_ANIMATION_TIME = 10; // secs
-	/** max frames per second */
-	public static final int MAX_ANIMATION_FRAME_RATE = 30; // frames per second
+	/** max frames per second (Robotutor fork; upstream 30) */
+	public static final int MAX_ANIMATION_FRAME_RATE = 60;
 	/** min frames per second */
 	public static final int MIN_ANIMATION_FRAME_RATE = 6; // frames per second
 	/** kernel */
@@ -53,6 +53,7 @@ public class AnimationManager implements GTimerListener {
 	private boolean needToShowAnimationButton;
 
 	private final GTimer timer;
+	private int timerDelay = 1000 / MAX_ANIMATION_FRAME_RATE;
 
 	private TreeSet<AlgoElement> tempSet;
 	private long lastStart = 0;
@@ -65,7 +66,7 @@ public class AnimationManager implements GTimerListener {
 		this.kernel = kernel2;
 		animatedGeos = new ArrayList<>();
 		changedGeos = new ArrayList<>();
-		timer = UtilFactory.getPrototype().newTimer(this, 1000 / MAX_ANIMATION_FRAME_RATE);
+		timer = UtilFactory.getPrototype().newFrameTimer(this, 1000 / MAX_ANIMATION_FRAME_RATE);
 	}
 
 	/**
@@ -282,7 +283,12 @@ public class AnimationManager implements GTimerListener {
 	 *            delay in milliseconds
 	 */
 	protected void setTimerDelay(int i) {
-		timer.setDelay(i);
+		// Rescheduling restarts the interval, so only do it when the delay changes;
+		// adaptFrameRate calls this on nearly every step.
+		if (i != timerDelay) {
+			timerDelay = i;
+			timer.setDelay(i);
+		}
 	}
 
 	@Override
