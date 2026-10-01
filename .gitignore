@@ -1,0 +1,5 @@
+# Robotutor fork: the upstream mirror ships no .gitignore. Keep build output out of Git.
+.gradle/
+build/
+source/web/web/war/
+/dist/

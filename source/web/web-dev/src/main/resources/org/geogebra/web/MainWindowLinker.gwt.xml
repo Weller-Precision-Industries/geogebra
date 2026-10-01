@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Robotutor fork: see org.geogebra.web.linker.MainWindowLinker. -->
+<module>
+  <define-linker name="mainwindowxsi" class="org.geogebra.web.linker.MainWindowLinker" />
+  <add-linker name="mainwindowxsi" />
+</module>
