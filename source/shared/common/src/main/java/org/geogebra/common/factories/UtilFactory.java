@@ -94,4 +94,16 @@ public abstract class UtilFactory {
 	 * @return new GTimer object
 	 */
 	public abstract GTimer newTimer(GTimerListener listener, int delay);
+
+	/**
+	 * Timer for per-frame work such as animations. Platforms with a display
+	 * frame clock fire it in step with display frames; by default it is a
+	 * plain {@link #newTimer} timer.
+	 * @param listener to notify when timer fires
+	 * @param delay minimum interval between runs in ms
+	 * @return new GTimer object
+	 */
+	public GTimer newFrameTimer(GTimerListener listener, int delay) {
+		return newTimer(listener, delay);
+	}
 }

@@ -16,17 +16,19 @@
 
 package org.geogebra.web.html5.main;
 
-import org.gwtproject.timer.client.Timer;
+import elemental2.dom.DomGlobal;
+import elemental2.dom.FrameRequestCallback;
 
 /**
- * Timer system for view repaints
+ * Timer system for view repaints.
+ *
+ * <p>Robotutor fork: ticks on {@code requestAnimationFrame} instead of a 16 ms
+ * {@code setInterval}, so views repaint once per display frame, in phase with
+ * vsync, at the display's own refresh rate (60, 120, 144 Hz ...). Views asked
+ * to repaint during a tick paint synchronously in that frame (see
+ * {@link #isInFrame()}), instead of queueing another frame.</p>
  */
 public class TimerSystemW {
-
-	/**
-	 * delay between two timer performs
-	 */
-	public static final int MAIN_LOOP_DELAY = 16;
 
 	/**
 	 * loops to wait before performing a repaint
@@ -41,18 +43,17 @@ public class TimerSystemW {
 
 	public static final int SLEEPING_FLAG = -1;
 
-	/*
-	 * public static int euclidianMillis = 34; // = 30 FPS, half of screen Hz
-	 * public static int algebraMillis = 334; // = 3 FPS public static int
-	 * spreadsheetMillis = 334; // = 3 FPS
-	 */
+	/** idle frames before the loop stops until the next repaint request */
+	private static final int IDLE_FRAMES = 30;
+
+	private static boolean inFrame = false;
 
 	private final AppW app;
 
-	private Timer repaintTimer;
+	private final FrameRequestCallback frameCallback = timestamp -> onFrame();
 
 	private int idle;
-	private long browserSkipped = 0;
+	private boolean running = false;
 	private boolean detached = false;
 
 	/**
@@ -64,28 +65,49 @@ public class TimerSystemW {
 	public TimerSystemW(AppW app) {
 		this.app = app;
 		this.idle = 0;
+		requestFrame();
+	}
 
-		repaintTimer = new Timer() {
-			@Override
-			public void run() {
-				tick();
-			}
-		};
+	/**
+	 * @return whether the caller runs inside a repaint tick, where painting
+	 *         immediately lands in the current display frame
+	 */
+	public static boolean isInFrame() {
+		return inFrame;
+	}
 
-		repaintTimer.scheduleRepeating(MAIN_LOOP_DELAY);
+	private void requestFrame() {
+		running = true;
+		DomGlobal.requestAnimationFrame(frameCallback);
+	}
+
+	private void onFrame() {
+		if (!running || detached) {
+			return;
+		}
+		inFrame = true;
+		try {
+			tick();
+		} finally {
+			inFrame = false;
+		}
+		if (running) {
+			DomGlobal.requestAnimationFrame(frameCallback);
+		}
 	}
 
 	/**
 	 * Execute one timer tick.
 	 */
 	protected void tick() {
-		browserSkipped = 0;
-		if (!suggestRepaint()) {
+		if (suggestRepaint()) {
+			idle = 0;
+		} else {
 			idle++;
 		}
-		if (idle > 30) {
+		if (idle > IDLE_FRAMES) {
 			idle = 0;
-			repaintTimer.cancel();
+			running = false;
 		}
 	}
 
@@ -105,27 +127,19 @@ public class TimerSystemW {
 	 * Make sure the clock is ticking
 	 */
 	public void ensureRunning() {
-		if (detached) {
+		if (detached || running) {
 			return;
 		}
-		if (!this.repaintTimer.isRunning()) {
-			repaintTimer.scheduleRepeating(MAIN_LOOP_DELAY);
-		} else {
-			long time = System.currentTimeMillis();
-			if (browserSkipped > 0 && time - browserSkipped > 50) {
-				repaintTimer.run();
-			} else if (browserSkipped == 0) {
-				browserSkipped = time;
-			}
-		}
+		idle = 0;
+		requestFrame();
 	}
 
 	/**
-	 * Stop timer, make sure it's not revived from `ensureTimerRunning`
+	 * Stop the loop, make sure it's not revived from `ensureTimerRunning`
 	 * which may be called asynchronously
 	 */
 	public void detach() {
-		repaintTimer.cancel();
+		running = false;
 		detached = true;
 	}
 }
