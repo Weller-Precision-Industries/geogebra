@@ -344,6 +344,36 @@ test("with the toolbar shown, Tab and Shift+Tab still hand keyboard focus to the
 	await pressUntilHost("Shift+Tab", "before");
 });
 
+test("an unknown disabledCommands name is reported on the console", async ({ page }) => {
+	// GeoGebra's own Log is silent in production builds, so the fork warns on the console.
+	const { violations } = await openCalculator(page, { disabledCommands: "Intersect,NotACommand" });
+	expect(violations).toEqual([expect.stringMatching(/unknown disabled command NotACommand/)]);
+});
+
+test("portraitPanelShare gives the graph most of a phone-sized portrait frame", async ({ page }) => {
+	// Upstream keeps at least five rows for the panel in portrait, sized for a full-screen app;
+	// in a 560px embedded frame that leaves the graph only half the height.
+	const graphHeight = async (params) => {
+		const { frame } = await openCalculator(page, {
+			frameWidth: "360",
+			frameHeight: "560",
+			showToolBar: "true",
+			customToolBar: "0 1 15 | 6",
+			dataViews: "false",
+			...params,
+		});
+		await page.waitForTimeout(500);
+		return frame.evaluate(() =>
+			Math.max(...[...document.querySelectorAll("canvas")].map((canvas) => canvas.getBoundingClientRect().height)),
+		);
+	};
+	const stock = await graphHeight({});
+	const shared = await graphHeight({ portraitPanelShare: "0.35" });
+	// Stock: five 56px rows minimum (280 of 560). With a 0.35 share: 65% of the height.
+	expect(stock).toBeLessThanOrEqual(285);
+	expect(shared).toBeGreaterThanOrEqual(0.64 * 560);
+});
+
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
 	const { frame } = await openCalculator(page);
 	const updatesPerSecond = await frame.evaluate(

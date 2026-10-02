@@ -45,7 +45,13 @@ export function startServer({ bundleDir, commit, port = 0 }) {
 			response.end(body);
 		};
 		if (url.pathname === "/" || url.pathname === "/host.html") {
-			const html = (await readFile(join(here, "host.html"), "utf8")).replace("__FRAME_QUERY__", url.search);
+			// frameWidth/frameHeight size the calculator frame (e.g. a phone-sized portrait frame);
+			// every other parameter is passed to the frame as an applet parameter.
+			const size = (name, fallback) => String(Number(url.searchParams.get(name)) || fallback);
+			const html = (await readFile(join(here, "host.html"), "utf8"))
+				.replace("__FRAME_QUERY__", url.search)
+				.replace("__FRAME_WIDTH__", size("frameWidth", 900))
+				.replace("__FRAME_HEIGHT__", size("frameHeight", 560));
 			return send(200, html, {
 				"Content-Type": TYPES[".html"],
 				"Content-Security-Policy": "default-src 'self'; frame-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'",
