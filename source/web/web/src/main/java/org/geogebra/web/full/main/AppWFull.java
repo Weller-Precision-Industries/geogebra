@@ -826,7 +826,8 @@ public class AppWFull extends AppW implements HasKeyboard, MenuViewListener {
 		if (isUnbundled()) {
 			if (isPortrait()) {
 				p.getSplitPaneData()[0].setDivider(PerspectiveDecoder.portraitRatio(
-						getHeight(), isUnbundledGraphing() || isUnbundled3D()));
+						getHeight(), isUnbundledGraphing() || isUnbundled3D(),
+						getAppletParameters().getDataParamPortraitPanelShare()));
 			} else {
 				p.getSplitPaneData()[0].setDivider(PerspectiveDecoder.landscapeRatio(this, getWidth()));
 			}

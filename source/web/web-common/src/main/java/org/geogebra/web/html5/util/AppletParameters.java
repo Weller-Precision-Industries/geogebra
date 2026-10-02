@@ -197,6 +197,16 @@ public class AppletParameters {
 	}
 
 	/**
+	 * Robotutor: share of the applet height for the side panel (algebra input, tools) in
+	 * portrait, between 0 and 1; 0 keeps upstream's fixed five input rows.
+	 *
+	 * @return the data-param-portraitPanelShare (default: 0)
+	 */
+	public double getDataParamPortraitPanelShare() {
+		return getDoubleDataParam("portraitPanelShare", 0);
+	}
+
+	/**
 	 * Whether Tab past the last control (or Shift+Tab before the first) leaves the
 	 * applet instead of wrapping around, so keyboard users can reach the host page.
 	 *

@@ -21,10 +21,11 @@ import java.util.List;
 
 import org.geogebra.common.kernel.commands.Commands;
 import org.geogebra.common.main.settings.config.AppConfigGraphing;
-import org.geogebra.common.util.debug.Log;
 import org.geogebra.web.full.gui.images.SvgPerspectiveResources;
 import org.geogebra.web.html5.util.AppletParameters;
 import org.geogebra.web.resources.SVGResource;
+
+import elemental2.dom.DomGlobal;
 
 /**
  * Specific behavior for graphing app
@@ -64,7 +65,8 @@ public final class GraphingActivity extends BaseActivity {
 			if (command != null) {
 				disabled.add(command);
 			} else if (!name.trim().isEmpty()) {
-				Log.warn("Robotutor: unknown disabled command " + name.trim());
+				// Log is silent in production builds; an embedding page must see this.
+				DomGlobal.console.warn("Robotutor: unknown disabled command " + name.trim());
 			}
 		}
 		config.withDisabledCommands(disabled.toArray(new Commands[0]));

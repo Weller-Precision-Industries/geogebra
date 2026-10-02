@@ -32,7 +32,7 @@
 	};
 	// Tests override parameters through the page's query string, e.g. ?previewPoints=false.
 	new URLSearchParams(window.location.search).forEach(function (value, key) {
-		params[key] = value;
+		if (key !== "frameWidth" && key !== "frameHeight") params[key] = value;
 	});
 	var host = document.getElementById("calculator");
 	Object.keys(params).forEach(function (key) {

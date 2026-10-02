@@ -1497,14 +1497,18 @@ public final class DockManagerW extends DockManager {
 			avPanel.onResize();
 		}
 
-		if ((!app.canResize() && !force) || panelsMoved) {
+		// Robotutor: an embedded applet with a portrait panel share keeps that split on every
+		// resize, even though fixed-size applets otherwise skip this (until the user drags it).
+		double panelShare = app.getAppletParameters().getDataParamPortraitPanelShare();
+		boolean keepPanelShare = panelShare > 0 && panelShare < 1;
+		if ((!app.canResize() && !force && !keepPanelShare) || panelsMoved) {
 			return;
 		}
 		calculateKeyboardHeight();
 		ExtendedBoolean old = portrait;
 		portrait = ExtendedBoolean.newExtendedBoolean(app.isPortrait());
 		boolean orientationChanged = old != portrait;
-		if (force || orientationChanged) {
+		if (force || orientationChanged || keepPanelShare) {
 			// run only if orientation has changed;
 			final double landscape = PerspectiveDecoder.landscapeRatio(app, app.getWidth());
 
@@ -1572,6 +1576,12 @@ public final class DockManagerW extends DockManager {
 		}
 
 		if (app.isPortrait()) {
+			double panelShare = app.getAppletParameters().getDataParamPortraitPanelShare();
+			if (toolbar != null && toolbar.isOpen() && panelShare > 0 && panelShare < 1) {
+				// Robotutor: an embedded applet gives the panel a share of its height, keeping at
+				// least the navigation rail and one input row (upstream keeps five rows).
+				avHeight = Math.max(2 * ToolbarPanel.CLOSED_HEIGHT_PORTRAIT, appHeight * panelShare);
+			}
 			if (toolbar != null && toolbar.isClosed()) {
 				closePortrait(split, toolbar);
 			} else {

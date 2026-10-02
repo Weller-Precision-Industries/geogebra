@@ -546,7 +546,8 @@ public final class ToolbarPanel extends FlowPanel
 		double h = app.getHeight();
 		int kh = 0;
 		if (app.isUnbundledGraphing() || app.isUnbundled3D()) {
-			return (int) Math.round(h * PerspectiveDecoder.portraitRatio(h, true)) + kh;
+			return (int) Math.round(h * PerspectiveDecoder.portraitRatio(h, true,
+					app.getAppletParameters().getDataParamPortraitPanelShare())) + kh;
 		}
 		return (int) Math.round(h * PerspectiveDecoder.portraitRatio(h, false));
 	}

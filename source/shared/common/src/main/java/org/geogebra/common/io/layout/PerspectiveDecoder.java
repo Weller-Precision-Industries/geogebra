@@ -246,6 +246,26 @@ public class PerspectiveDecoder {
 	 *            whether this is for graphing
 	 * @return preferred ratio for AV perspective in portrait mode.
 	 */
+	/**
+	 * Robotutor: an embedding page may give the side panel a share of the height in portrait
+	 * (data-param-portraitPanelShare) instead of the fixed five input rows sized for a full-screen app.
+	 * @param height app height
+	 * @param graphing whether this is the graphing (or 3D) app
+	 * @param panelShare share of the height for the panel, or 0 for the default
+	 * @return share of the height for the graphics view in portrait
+	 */
+	public static double portraitRatio(double height, boolean graphing, double panelShare) {
+		if (panelShare > 0 && panelShare < 1) {
+			return 1 - panelShare;
+		}
+		return portraitRatio(height, graphing);
+	}
+
+	/**
+	 * @param height app height
+	 * @param graphing whether this is the graphing (or 3D) app
+	 * @return share of the height for the graphics view in portrait
+	 */
 	public static double portraitRatio(double height, boolean graphing) {
 		if (graphing) {
 			double avHeight = AV_ROWS_IN_PORTRAIT * INPUT_ROW_HEIGHT;
