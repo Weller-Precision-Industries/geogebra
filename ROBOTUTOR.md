@@ -37,7 +37,8 @@ JAVA_HOME=~/.local/lib/jdk17 ../../gradlew :web:gwtCompile :web:compileSass -Pgm
 built bundle served the way OLMS serves it (sandboxed frame, nonce + `'strict-dynamic'` CSP): the Apps API
 calls OLMS makes, LaTeX in and out, geometry commands, a curated click toolbar, per-question command and
 special-point restrictions, the portrait panel share, renamed givens surviving a learner reusing their label, the closed
-on-screen keyboard, the graph-only review perspective, `tabExit`, and 60 fps animation.
+on-screen keyboard, the graph-only review perspective, `tabExit`, the scientific app with its keypad (the calculator
+OLMS offers beside a question), and 60 fps animation.
 
 ```sh
 robotutor/check.sh                    # package-web3d.sh for HEAD, then the contract

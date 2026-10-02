@@ -374,6 +374,27 @@ test("portraitPanelShare gives the graph most of a phone-sized portrait frame", 
 	expect(shared).toBeGreaterThanOrEqual(0.64 * 560);
 });
 
+test("the scientific app runs in the sandbox, with its keypad opening on focus", async ({ page }) => {
+	// OLMS offers it as a tool beside a question (ADR-116): same frame, same CSP, appName "scientific".
+	const { frame, locator, violations } = await openCalculator(page, {
+		appName: "scientific",
+		showKeyboardOnFocus: "true",
+		frameWidth: "720",
+		frameHeight: "430",
+	});
+	await locator.locator(".algebraView").first().click();
+	await expect(locator.locator(".TabbedKeyBoard")).toBeVisible();
+	for (const key of ["sin", "cos", "ln"]) {
+		await expect(locator.getByRole("button", { name: key, exact: true }).first()).toBeVisible();
+	}
+	await page.waitForTimeout(500);
+	const before = await frame.evaluate(() => window.__api.getAllObjectNames().length);
+	await page.keyboard.type("3.5*4.2^2", { delay: 20 });
+	await page.keyboard.press("Enter");
+	await expect.poll(() => frame.evaluate(() => window.__api.getAllObjectNames().length)).toBe(before + 1);
+	expect(violations).toEqual([]);
+});
+
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
 	const { frame } = await openCalculator(page);
 	const updatesPerSecond = await frame.evaluate(
