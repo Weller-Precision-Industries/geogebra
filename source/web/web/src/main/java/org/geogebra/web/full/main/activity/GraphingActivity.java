@@ -16,8 +16,14 @@
 
 package org.geogebra.web.full.main.activity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.geogebra.common.kernel.commands.Commands;
 import org.geogebra.common.main.settings.config.AppConfigGraphing;
+import org.geogebra.common.util.debug.Log;
 import org.geogebra.web.full.gui.images.SvgPerspectiveResources;
+import org.geogebra.web.html5.util.AppletParameters;
 import org.geogebra.web.resources.SVGResource;
 
 /**
@@ -29,15 +35,49 @@ public final class GraphingActivity extends BaseActivity {
 	 * Graphing activity
 	 */
 	public GraphingActivity() {
-		this(false);
+		super(new AppConfigGraphing());
 	}
 
 	/**
-	 * @param geometryCommands whether to allow every non-CAS command (Robotutor)
+	 * Graphing activity configured by the Robotutor applet parameters
+	 * (geometryCommands, dataViews, previewPoints, disabledCommands).
+	 * @param parameters applet parameters
 	 */
-	public GraphingActivity(boolean geometryCommands) {
-		super(geometryCommands ? new AppConfigGraphing().withGeometryCommands()
-				: new AppConfigGraphing());
+	public GraphingActivity(AppletParameters parameters) {
+		super(robotutorConfig(parameters));
+	}
+
+	private static AppConfigGraphing robotutorConfig(AppletParameters parameters) {
+		AppConfigGraphing config = new AppConfigGraphing();
+		if (parameters.getDataParamGeometryCommands()) {
+			config.withGeometryCommands();
+		}
+		if (!parameters.getDataParamDataViews()) {
+			config.withoutDataViews();
+		}
+		if (!parameters.getDataParamPreviewPoints()) {
+			config.withoutPreviewPoints();
+		}
+		List<Commands> disabled = new ArrayList<>();
+		for (String name : parameters.getDataParamDisabledCommands().split(",")) {
+			Commands command = commandNamed(name.trim());
+			if (command != null) {
+				disabled.add(command);
+			} else if (!name.trim().isEmpty()) {
+				Log.warn("Robotutor: unknown disabled command " + name.trim());
+			}
+		}
+		config.withDisabledCommands(disabled.toArray(new Commands[0]));
+		return config;
+	}
+
+	private static Commands commandNamed(String name) {
+		for (Commands command : Commands.values()) {
+			if (command.name().equals(name)) {
+				return command;
+			}
+		}
+		return null;
 	}
 
 	@Override

@@ -58,4 +58,35 @@ class AppConfigGraphingGeometryCommandsTest {
 		assertNull(config.getCommandArgumentFilter());
 		assertNull(config.newCommandSyntaxFilter());
 	}
+
+	@Test
+	void dataViewsCanBeRemoved() {
+		assertTrue(new AppConfigGraphing().hasTableView());
+		assertTrue(new AppConfigGraphing().hasSpreadsheetView());
+		AppConfigGraphing config = new AppConfigGraphing().withoutDataViews();
+		assertFalse(config.hasTableView());
+		assertFalse(config.hasSpreadsheetView());
+	}
+
+	@Test
+	void previewPointsCanBeRemoved() {
+		assertTrue(new AppConfigGraphing().hasPreviewPoints());
+		assertFalse(new AppConfigGraphing().withoutPreviewPoints().hasPreviewPoints());
+	}
+
+	@Test
+	void disabledCommandsAreRefusedWithTheirAliases() {
+		CommandFilter filter = new AppConfigGraphing().withGeometryCommands()
+				.withDisabledCommands(Commands.Intersect, Commands.Reflect, Commands.Slope)
+				.createCommandFilter();
+		assertFalse(filter.isCommandAllowed(Commands.Intersect));
+		assertFalse(filter.isCommandAllowed(Commands.Reflect));
+		// Reflect is the English alias of the internal Mirror command.
+		assertFalse(filter.isCommandAllowed(Commands.Mirror));
+		assertFalse(filter.isCommandAllowed(Commands.Slope));
+		assertTrue(filter.isCommandAllowed(Commands.Segment));
+		assertTrue(filter.isCommandAllowed(Commands.Polygon));
+		// The app's own restrictions still apply.
+		assertFalse(filter.isCommandAllowed(Commands.Factor));
+	}
 }

@@ -168,6 +168,35 @@ public class AppletParameters {
 	}
 
 	/**
+	 * Robotutor: whether the graphing app offers its Table and Spreadsheet views.
+	 *
+	 * @return the data-param-dataViews (default: true)
+	 */
+	public boolean getDataParamDataViews() {
+		return getBoolDataParam("dataViews", true);
+	}
+
+	/**
+	 * Robotutor: whether the graphing app previews special points (roots, extrema,
+	 * intersections) when an object is selected, and offers them in the algebra item menu.
+	 *
+	 * @return the data-param-previewPoints (default: true)
+	 */
+	public boolean getDataParamPreviewPoints() {
+		return getBoolDataParam("previewPoints", true);
+	}
+
+	/**
+	 * Robotutor: comma-separated English command names the graphing app refuses
+	 * (aliases included), e.g. "Intersect,Root,Extremum".
+	 *
+	 * @return the data-param-disabledCommands (default: empty)
+	 */
+	public String getDataParamDisabledCommands() {
+		return getStringDataParam("disabledCommands", "");
+	}
+
+	/**
 	 * Whether Tab past the last control (or Shift+Tab before the first) leaves the
 	 * applet instead of wrapping around, so keyboard users can reach the host page.
 	 *
