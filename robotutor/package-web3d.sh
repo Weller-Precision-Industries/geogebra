@@ -7,7 +7,8 @@
 #   web3d/   GWT output: web3d.nocache.js, the permutation, deferredjs/, fonts/, js/
 #   css/     compiled styles (GeoGebra loads them from <codebase>/../css)
 #   NOTICE   source commit and licence summary
-# Only the English UI strings are kept; other languages are dropped to save ~24 MB.
+# Every UI language is kept (~25 MB uncompressed): GeoGebra fetches only the one an embedder
+# selects with the `language` parameter, so unused languages cost no page weight.
 # Requires JDK 17 (JAVA_HOME) and rsync.
 set -euo pipefail
 
@@ -28,12 +29,10 @@ stage="$out/$name"
 rm -rf "$stage"
 mkdir -p "$stage/web3d/js"
 rsync -a \
-	--exclude 'js/properties_keys_*' \
 	--exclude 'web3d.devmode.js' \
 	--exclude 'html/' \
 	--exclude 'sworker*.js' \
 	"$war/web3d/" "$stage/web3d/"
-cp "$war"/web3d/js/properties_keys_en.js "$war"/web3d/js/properties_keys_en-GB.js "$stage/web3d/js/"
 cp -r "$war/css" "$stage/css"
 cat > "$stage/NOTICE" <<NOTICE
 GeoGebra web bundle (graphing app), built from

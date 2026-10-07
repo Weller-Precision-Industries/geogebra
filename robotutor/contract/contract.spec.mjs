@@ -395,6 +395,32 @@ test("the scientific app runs in the sandbox, with its keypad opening on focus",
 	expect(violations).toEqual([]);
 });
 
+test("loads a translated UI in the sandbox, with commands still accepted in English", async ({ page }) => {
+	// OLMS starts GeoGebra in the learner's language; the language file is fetched on demand by an
+	// injected script, which the nonce + 'strict-dynamic' policy must allow, and the opaque origin
+	// has no localStorage for GeoGebra's language cache.
+	const { frame, locator, violations } = await openCalculator(page, { language: "es" });
+	await expect(locator.getByText("Entrada…")).toBeVisible();
+	const result = await frame.evaluate(() => {
+		const api = window.__api;
+		api.evalCommand("f(x)=2x-4");
+		api.evalCommand("A=Root(f)");
+		return { names: api.getAllObjectNames(), command: api.getCommandString("A", false) };
+	});
+	expect(result.names).toEqual(expect.arrayContaining(["f", "A"]));
+	// OLMS reports constructions with the unlocalized command string (internal bracket syntax),
+	// so the grader reads one vocabulary whatever the UI language.
+	expect(result.command).toBe("Root[f]");
+	expect(violations).toEqual([]);
+});
+
+test("right-to-left languages load too", async ({ page }) => {
+	const { locator, violations } = await openCalculator(page, { language: "ar" });
+	await expect(locator.locator(".algebraView").first()).toBeVisible();
+	await expect(locator.getByText("Input…")).toHaveCount(0);
+	expect(violations).toEqual([]);
+});
+
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
 	const { frame } = await openCalculator(page);
 	const updatesPerSecond = await frame.evaluate(
