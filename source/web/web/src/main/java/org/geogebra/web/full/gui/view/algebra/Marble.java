@@ -115,6 +115,7 @@ public final class Marble extends SimplePanel {
 		}
 		setAltText(value ? "visible" : "not visible");
 		getElement().setAttribute("aria-checked", String.valueOf(value));
+		getElement().setAttribute("aria-label", gc.loc.getMenu("ShowHideObject"));
 	}
 
 	/**
