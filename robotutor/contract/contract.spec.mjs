@@ -425,12 +425,13 @@ test("right-to-left languages load too", async ({ page }) => {
 /** Serious or critical WCAG 2.x A/AA findings inside the applet. Colours are the embedder's to set. */
 async function axeFindings(page) {
 	const results = await new AxeBuilder({ page })
+		.include("#calculator")
 		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
 		.disableRules(["color-contrast"])
 		.analyze();
 	return results.violations
 		.filter((violation) => violation.impact === "serious" || violation.impact === "critical")
-		.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.html.slice(0, 90)).join(" | ")}`);
+		.map((violation) => `${violation.id}: ${violation.nodes.map((node) => `${node.target.join(" ")} ${node.html.slice(0, 90)}`).join(" | ")}`);
 }
 
 test("the graphing app with learner objects has no serious accessibility findings", async ({ page }) => {

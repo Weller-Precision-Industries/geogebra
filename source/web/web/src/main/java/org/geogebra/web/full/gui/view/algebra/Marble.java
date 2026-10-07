@@ -53,6 +53,9 @@ public final class Marble extends SimplePanel {
 	 */
 	public Marble(final RadioTreeItem gc) {
 		this.gc = gc;
+		// Robotutor: the marble is labelled "Show / Hide Object" and toggles visibility, so it is a
+		// switch whose state is aria-checked (aria-label alone is not allowed on a plain div).
+		getElement().setAttribute("role", "switch");
 		if (gc.getApplication().isUnbundledOrWhiteboard() && !NavigatorUtil.isMobile()) {
 			this.getElement().removeAttribute("title");
 		}
@@ -111,6 +114,7 @@ public final class Marble extends SimplePanel {
 			this.getElement().getStyle().setBackgroundColor(GColor.getColorString(GColor.WHITE));
 		}
 		setAltText(value ? "visible" : "not visible");
+		getElement().setAttribute("aria-checked", String.valueOf(value));
 	}
 
 	/**
