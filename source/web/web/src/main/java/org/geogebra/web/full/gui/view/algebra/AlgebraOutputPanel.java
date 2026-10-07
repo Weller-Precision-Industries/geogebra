@@ -87,6 +87,8 @@ public final class AlgebraOutputPanel extends FlowPanel {
 	void addEqualSignPrefix() {
 		final Image arrow = new NoDragImage(MaterialDesignResources.INSTANCE.equal_sign_black(), 24);
 		arrow.setStyleName("arrowOutputImg");
+		// Robotutor: the sign precedes the computed value; screen readers read it as "equals".
+		arrow.setAltText("=");
 		add(arrow);
 	}
 

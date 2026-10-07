@@ -161,6 +161,9 @@ class NavigationRail extends FlowPanel implements ExamListener {
 		StandardButton btn = new StandardButton(icon, app.getLocalization().getMenu(key), 24);
 		btn.addStyleName("tabButton");
 		AriaHelper.hide(btn);
+		// Robotutor: hidden from assistive technology and skipped by the applet's keyboard order,
+		// so not focusable either (an aria-hidden focusable control is announced as nothing).
+		btn.getElement().setTabIndex(-1);
 		return btn;
 	}
 

@@ -73,7 +73,6 @@ import org.geogebra.web.shared.SharedResources;
 import org.gwtproject.animation.client.AnimationScheduler;
 import org.gwtproject.animation.client.AnimationScheduler.AnimationCallback;
 import org.gwtproject.core.client.Scheduler;
-import org.gwtproject.dom.client.Element;
 import org.gwtproject.dom.style.shared.Unit;
 import org.gwtproject.event.dom.client.KeyCodes;
 import org.gwtproject.event.dom.client.MouseDownEvent;
@@ -1615,10 +1614,7 @@ public final class AlgebraViewW extends Tree
 
 	private TreeItem asPlainTreeItem(RadioTreeItem inputPanel) {
 		TreeItem plainTreeItem = new TreeItem(inputPanel.getWidget());
-		if (plainTreeItem.getElement().getChildNodes().getItem(0) instanceof Element el) {
-			el.removeAttribute("role");
-			el.removeAttribute("aria-level");
-		}
+		AVTreeItem.removeTreeItemRole(plainTreeItem);
 		return plainTreeItem;
 	}
 

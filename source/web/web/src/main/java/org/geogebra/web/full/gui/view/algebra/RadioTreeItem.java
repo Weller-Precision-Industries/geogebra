@@ -676,6 +676,7 @@ public abstract class RadioTreeItem extends AVTreeItem
 			updateFont(content);
 			Image arrow = new NoDragImage(MaterialDesignResources.INSTANCE.equal_sign_white(), 24, 24);
 			arrow.setStyleName("arrowOutputImg");
+			arrow.setAltText("=");
 			content.insert(arrow, 0);
 		}
 	}
