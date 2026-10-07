@@ -31,6 +31,7 @@ public class AVTreeItem extends TreeItem {
 	 */
 	public AVTreeItem() {
 		super();
+		removeTreeItemRole(this);
 	}
 
 	/**
@@ -39,6 +40,20 @@ public class AVTreeItem extends TreeItem {
 	 */
 	public AVTreeItem(Widget w) {
 		super(w);
+		removeTreeItemRole(this);
+	}
+
+	/**
+	 * Robotutor: GWT marks each row role="treeitem", but the tree role sits on a sibling focus
+	 * helper, so no row has the tree parent ARIA requires. Rows are plain containers of labelled
+	 * controls, as the input row already is.
+	 * @param item algebra view row
+	 */
+	static void removeTreeItemRole(TreeItem item) {
+		if (item.getElement().getChildNodes().getItem(0) instanceof Element el) {
+			el.removeAttribute("role");
+			el.removeAttribute("aria-level");
+		}
 	}
 
 	@Override

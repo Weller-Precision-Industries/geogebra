@@ -166,6 +166,8 @@ public final class MarblePanel extends FlowPanel implements KeyDownHandler, Alge
 		AriaHelper.setLabel(btnPlus, tooltip);
 		btnPlus.setAltText(tooltip);
 		AriaHelper.setHidden(btnPlus, true);
+		// Robotutor: skipped by the applet's keyboard order too, so not focusable while aria-hidden.
+		btnPlus.getElement().setTabIndex(-1);
 	}
 
 	@Override

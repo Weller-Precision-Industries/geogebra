@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { startServer } from "./server.mjs";
 
@@ -419,6 +420,35 @@ test("right-to-left languages load too", async ({ page }) => {
 	await expect(locator.locator(".algebraView").first()).toBeVisible();
 	await expect(locator.getByText("Input…")).toHaveCount(0);
 	expect(violations).toEqual([]);
+});
+
+/** Serious or critical WCAG 2.x A/AA findings inside the applet. Colours are the embedder's to set. */
+async function axeFindings(page) {
+	const results = await new AxeBuilder({ page })
+		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+		.disableRules(["color-contrast"])
+		.analyze();
+	return results.violations
+		.filter((violation) => violation.impact === "serious" || violation.impact === "critical")
+		.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.html.slice(0, 90)).join(" | ")}`);
+}
+
+test("the graphing app with learner objects has no serious accessibility findings", async ({ page }) => {
+	// Fork patch: algebra rows drop GWT's orphaned treeitem role, and controls the applet hides from
+	// assistive technology (tab rail, add-item button) are not focusable either.
+	const { frame, locator } = await openCalculator(page);
+	await frame.evaluate(() => {
+		window.__api.evalCommand("f(x)=2x+1");
+		window.__api.evalCommand("A=(1,3)");
+	});
+	await locator.locator(".avItem").first().click();
+	expect(await axeFindings(page)).toEqual([]);
+});
+
+test("the scientific app has no serious accessibility findings", async ({ page }) => {
+	const { frame } = await openCalculator(page, { appName: "scientific", frameWidth: "720", frameHeight: "430" });
+	await frame.evaluate(() => window.__api.evalCommand("3.5*4.2^2"));
+	expect(await axeFindings(page)).toEqual([]);
 });
 
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
