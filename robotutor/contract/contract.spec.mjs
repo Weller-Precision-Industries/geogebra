@@ -403,11 +403,14 @@ test("loads a translated UI in the sandbox, with commands still accepted in Engl
 	await expect(locator.getByText("Entrada…")).toBeVisible();
 	const result = await frame.evaluate(() => {
 		const api = window.__api;
-		api.evalCommand("f(x)=x^2-4");
+		api.evalCommand("f(x)=2x-4");
 		api.evalCommand("A=Root(f)");
 		return { names: api.getAllObjectNames(), command: api.getCommandString("A", false) };
 	});
-	expect(result.names).toContain("f");
+	expect(result.names).toEqual(expect.arrayContaining(["f", "A"]));
+	// OLMS reports constructions with the unlocalized command string (internal bracket syntax),
+	// so the grader reads one vocabulary whatever the UI language.
+	expect(result.command).toBe("Root[f]");
 	expect(violations).toEqual([]);
 });
 

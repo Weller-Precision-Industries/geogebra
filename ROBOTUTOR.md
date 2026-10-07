@@ -38,7 +38,7 @@ built bundle served the way OLMS serves it (sandboxed frame, nonce + `'strict-dy
 calls OLMS makes, LaTeX in and out, geometry commands, a curated click toolbar, per-question command and
 special-point restrictions, the portrait panel share, renamed givens surviving a learner reusing their label, the closed
 on-screen keyboard, the graph-only review perspective, `tabExit`, the scientific app with its keypad (the calculator
-OLMS offers beside a question), and 60 fps animation.
+OLMS offers beside a question), translated and right-to-left UIs, and 60 fps animation.
 
 ```sh
 robotutor/check.sh                    # package-web3d.sh for HEAD, then the contract
@@ -64,6 +64,6 @@ without it or without replacing those assets.
 ## Release bundle for OLMS
 
 `robotutor/package-web3d.sh` builds the graphing app and writes
-`dist/geogebra-web3d-<commit>.tar.gz` plus its `.sha256` file. The archive holds `web3d/`, `css/` (English UI strings
-only) and a `NOTICE`. Each one is published as a GitHub Release (`web3d-<commit>`) on this fork; OLMS pins the
+`dist/geogebra-web3d-<commit>.tar.gz` plus its `.sha256` file. The archive holds `web3d/` (with every UI language;
+GeoGebra fetches only the one selected by the `language` parameter), `css/` and a `NOTICE`. Each one is published as a GitHub Release (`web3d-<commit>`) on this fork; OLMS pins the
 release URL and checksum and serves the files from `/vendor/geogebra/<commit>/`.
