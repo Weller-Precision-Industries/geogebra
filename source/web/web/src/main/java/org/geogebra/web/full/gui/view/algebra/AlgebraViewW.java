@@ -1475,6 +1475,9 @@ public final class AlgebraViewW extends Tree
 		if (inputPanelLatex != null && app.getGuiManager().hasInputHelpPanel()) {
 			app.getGuiManager().getInputHelpPanel().setLabels();
 		}
+		// Robotutor: a label needs a role (aria-label is prohibited on a plain div); the view is a
+		// named group of rows.
+		getElement().setAttribute("role", "group");
 		AriaHelper.setLabel(this, app.getLocalization().getMenu("Algebra"));
 	}
 

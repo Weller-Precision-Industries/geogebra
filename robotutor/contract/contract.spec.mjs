@@ -446,6 +446,33 @@ test("the graphing app with learner objects has no serious accessibility finding
 	expect(await axeFindings(page)).toEqual([]);
 });
 
+test("an empty, input-less algebra view with the Tools tab open has no serious accessibility findings", async ({
+	page,
+}) => {
+	// What a click-only question shows (showAlgebraInput=false), with keyboardTools.
+	const { locator } = await openCalculator(page, {
+		showToolBar: "true",
+		customToolBar: "0 1 15 | 6",
+		dataViews: "false",
+		showAlgebraInput: "false",
+		keyboardTools: "true",
+		frameWidth: "732",
+		frameHeight: "610",
+	});
+	await locator.locator("button.tabButton").filter({ hasText: "Tools" }).click();
+	expect(await axeFindings(page)).toEqual([]);
+	// and after placing a point from the keyboard
+	await locator.locator('button[aria-label^="Point. "]').focus();
+	await page.keyboard.press("Tab");
+	await page.keyboard.press("Shift+Tab");
+	await page.keyboard.press("Enter");
+	await expect(locator.locator(".robotutorToolCursor")).toBeVisible();
+	await page.keyboard.press("ArrowRight");
+	await page.keyboard.press("Enter");
+	await page.waitForTimeout(500);
+	expect(await axeFindings(page)).toEqual([]);
+});
+
 test("the scientific app has no serious accessibility findings", async ({ page }) => {
 	const { frame } = await openCalculator(page, { appName: "scientific", frameWidth: "720", frameHeight: "430" });
 	await frame.evaluate(() => window.__api.evalCommand("3.5*4.2^2"));
