@@ -192,6 +192,8 @@ public final class IconButtonPanel extends FlowPanel
 	private void setChecked(IconButton iconButton, boolean checked) {
 		AriaHelper.setRole(iconButton, "radio");
 		iconButton.setActive(checked);
+		// Robotutor: a radio states its selection with aria-checked; aria-pressed is not allowed.
+		iconButton.getElement().removeAttribute("aria-pressed");
 		AriaHelper.setChecked(iconButton, checked);
 	}
 
