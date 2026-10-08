@@ -16,6 +16,9 @@
 
 package org.geogebra.web.full.gui.toolbarpanel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.geogebra.common.GeoGebraConstants;
 import org.geogebra.common.awt.GColor;
 import org.geogebra.common.exam.ExamController;
@@ -38,6 +41,7 @@ import org.geogebra.web.resources.SVGResource;
 import org.geogebra.web.shared.GlobalHeader;
 import org.gwtproject.core.client.Scheduler;
 import org.gwtproject.user.client.ui.FlowPanel;
+import org.gwtproject.user.client.ui.Widget;
 import org.jspecify.annotations.Nullable;
 
 import elemental2.dom.CanvasRenderingContext2D;
@@ -160,10 +164,13 @@ class NavigationRail extends FlowPanel implements ExamListener {
 	private StandardButton createTabButton(String key, SVGResource icon) {
 		StandardButton btn = new StandardButton(icon, app.getLocalization().getMenu(key), 24);
 		btn.addStyleName("tabButton");
-		AriaHelper.hide(btn);
-		// Robotutor: hidden from assistive technology and skipped by the applet's keyboard order,
-		// so not focusable either (an aria-hidden focusable control is announced as nothing).
-		btn.getElement().setTabIndex(-1);
+		if (!app.getAppletParameters().getDataParamKeyboardTools()) {
+			AriaHelper.hide(btn);
+			// Robotutor: hidden from assistive technology and skipped by the applet's keyboard
+			// order, so not focusable either (an aria-hidden focusable control is announced as
+			// nothing).
+			btn.getElement().setTabIndex(-1);
+		}
 		return btn;
 	}
 
@@ -506,6 +513,20 @@ class NavigationRail extends FlowPanel implements ExamListener {
 		}
 		if (focusableMenuButton != null) {
 			focusableMenuButton.attachTo(app);
+		}
+		if (app.getAppletParameters().getDataParamKeyboardTools()) {
+			// Robotutor: the rail joins the applet's keyboard order (hidden buttons are skipped).
+			List<Widget> railButtons = new ArrayList<>();
+			for (StandardButton btn : new StandardButton[] {btnAlgebra, btnTools, btnDistribution,
+					btnTableView, btnSpreadsheet}) {
+				if (btn != null) {
+					railButtons.add(btn);
+				}
+			}
+			if (!railButtons.isEmpty()) {
+				new FocusableWidget(AccessibilityGroup.NAVIGATION_RAIL, null, railButtons)
+						.attachTo(app);
+			}
 		}
 		setAltTexts();
 	}

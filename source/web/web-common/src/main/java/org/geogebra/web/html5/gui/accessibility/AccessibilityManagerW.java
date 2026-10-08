@@ -86,6 +86,9 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 		components.add(geoTabber);
 		components.add(new PlayButtonTabber(app.getActiveEuclidianView()));
 		components.add(new ResetButtonTabber(app.getActiveEuclidianView()));
+		if (app.getAppletParameters().getDataParamKeyboardTools()) {
+			components.add(new KeyboardToolCursor(app));
+		}
 		List<String> externalControlSelectors = Arrays.stream(
 						app.getAppletParameters().getParamExternalControls().split(","))
 				.filter(s -> !s.isEmpty())

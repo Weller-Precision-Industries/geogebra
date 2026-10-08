@@ -452,6 +452,156 @@ test("the scientific app has no serious accessibility findings", async ({ page }
 	expect(await axeFindings(page)).toEqual([]);
 });
 
+/** Records what GeoGebra's live region reads (it clears itself after a second). */
+async function recordSpeech(frame) {
+	await frame.evaluate(() => {
+		window.__spoken = [];
+		new MutationObserver(() => {
+			for (const region of document.querySelectorAll("[id^=screenReader]")) {
+				const text = region.textContent.trim();
+				if (text && window.__spoken.at(-1) !== text) window.__spoken.push(text);
+			}
+		}).observe(document.body, { subtree: true, childList: true, characterData: true });
+	});
+}
+
+/** Presses Tab (or Shift+Tab) until `matches(document.activeElement)` holds inside the applet. */
+async function tabTo(page, frame, matches, { backward = false, limit = 40 } = {}) {
+	for (let press = 0; press < limit; press++) {
+		if (await frame.evaluate(matches)) return;
+		await page.keyboard.press(backward ? "Shift+Tab" : "Tab");
+		await page.waitForTimeout(80);
+	}
+	expect(await frame.evaluate(matches), `focus never reached ${matches}`).toBe(true);
+}
+
+const focusedTool = (name) =>
+	new Function(
+		`const a = document.activeElement; return !!a && (a.getAttribute("aria-label") || "").startsWith(${JSON.stringify(`${name}. `)});`,
+	);
+const focusedRail = (name) =>
+	new Function(
+		`const a = document.activeElement; return !!a && a.classList.contains("tabButton") && a.textContent.trim() === ${JSON.stringify(name)};`,
+	);
+const focusedCanvas = () => document.activeElement?.tagName === "CANVAS";
+
+async function pressKeys(page, keys) {
+	for (const key of keys) {
+		await page.keyboard.press(key);
+		await page.waitForTimeout(60);
+	}
+}
+
+test("keyboardTools builds a point, a segment and a polygon without a pointer, read aloud", async ({ page }) => {
+	// Fork patch (OLM-2244): with keyboardTools the rail and tool buttons join the keyboard order,
+	// and with a construction tool active the graph offers a cursor that clicks through the
+	// ordinary pointer path.
+	const { frame, locator, violations } = await openCalculator(page, {
+		showToolBar: "true",
+		customToolBar: "0 1 15 16 30 | 6",
+		dataViews: "false",
+		keyboardTools: "true",
+	});
+	await frame.evaluate(() => window.__api.setCoordSystem(-6, 6, -6, 6));
+	await recordSpeech(frame);
+	await page.locator("#before").focus();
+	await page.keyboard.press("Tab");
+
+	await tabTo(page, frame, focusedRail("Tools"));
+	await page.keyboard.press("Enter");
+	await tabTo(page, frame, focusedTool("Point"));
+	await page.keyboard.press("Enter");
+	await expect(locator.locator('button[aria-label^="Point. "]')).toHaveAttribute("aria-pressed", "true");
+	await tabTo(page, frame, focusedCanvas);
+	await expect(locator.locator(".robotutorToolCursor")).toBeVisible();
+	await pressKeys(page, ["ArrowRight", "ArrowRight", "ArrowUp", "ArrowUp", "ArrowUp", "Enter"]);
+	await expect.poll(() => frame.evaluate(() => window.__api.getAllObjectNames())).toEqual(["A"]);
+	// The cursor moves in grid steps from the origin, so A is the grid point two right, three up.
+	const [ax, ay] = await frame.evaluate(() => [window.__api.getXcoord("A"), window.__api.getYcoord("A")]);
+	const stepX = ax / 2;
+	const stepY = ay / 3;
+	expect(stepX).toBeGreaterThan(0);
+	expect(stepY).toBeGreaterThan(0);
+
+	// Segment: Shift+Tab back to the tools, pick Segment, click A (selected by snapping) and a new point.
+	await tabTo(page, frame, focusedTool("Segment"), { backward: true });
+	await page.keyboard.press("Enter");
+	await tabTo(page, frame, focusedCanvas);
+	await pressKeys(page, ["Enter", "ArrowLeft", "ArrowLeft", "ArrowLeft", "ArrowLeft", "Enter"]);
+	await expect.poll(() => frame.evaluate(() => window.__api.getAllObjectNames().length)).toBe(3);
+	const segment = await frame.evaluate(() =>
+		window.__api.getAllObjectNames().find((name) => window.__api.getObjectType(name) === "segment"),
+	);
+	expect(segment).toBeTruthy();
+	expect(await frame.evaluate((name) => window.__api.getCommandString(name, false), segment)).toBe("Segment[A, B]");
+	expect(await frame.evaluate(() => [window.__api.getXcoord("B"), window.__api.getYcoord("B")])).toEqual([
+		-2 * stepX,
+		3 * stepY,
+	]);
+
+	// Polygon B, C, D, back to B.
+	await tabTo(page, frame, focusedTool("Polygon"), { backward: true });
+	await page.keyboard.press("Enter");
+	await tabTo(page, frame, focusedCanvas);
+	await pressKeys(page, ["Enter", "ArrowDown", "ArrowDown", "ArrowDown", "Enter"]);
+	await pressKeys(page, ["ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "Enter"]);
+	await pressKeys(page, ["ArrowUp", "ArrowUp", "ArrowUp", "ArrowLeft", "ArrowLeft", "ArrowLeft", "ArrowLeft", "Enter"]);
+	const polygon = await expect
+		.poll(() =>
+			frame.evaluate(() =>
+				window.__api.getAllObjectNames().find((name) => window.__api.getObjectType(name) === "triangle"),
+			),
+		)
+		.toBeTruthy();
+	void polygon;
+
+	// Reflect the triangle in the x-axis: click inside it (the cursor is back on B), then on the axis
+	await tabTo(page, frame, focusedTool("Reflect about Line"), { backward: true });
+	await page.keyboard.press("Enter");
+	await tabTo(page, frame, focusedCanvas);
+	// (past the triangle's side CD, which also lies on the axis)
+	await pressKeys(page, ["ArrowDown", "ArrowRight", "Enter", "ArrowDown", "ArrowDown"]);
+	await pressKeys(page, ["ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "Enter"]);
+	await expect
+		.poll(() =>
+			frame.evaluate(() =>
+				window.__api.getAllObjectNames().filter((name) => window.__api.getObjectType(name) === "triangle"),
+			),
+		)
+		.toHaveLength(2);
+	// GeoGebra records the image as Polygon[B', C', D'] with B' = Mirror[B, xAxis].
+	expect(await frame.evaluate(() => window.__api.getCommandString("B'", false))).toBe("Mirror[B, xAxis]");
+
+	const spoken = await frame.evaluate(() => window.__spoken.join(" | "));
+	expect(spoken).toMatch(/Point\. Select position.*\(0, 0\)\. On the graph, arrow keys move the cursor and Enter clicks/);
+	expect(spoken).toMatch(/Point A/);
+	expect(spoken).toMatch(/Selected Point A/);
+	expect(spoken).toMatch(/Point B =\(−2, 6\) Segment f/);
+	expect(spoken).toMatch(/Triangle t1/);
+	expect(spoken).toMatch(/on Segment f, Point A/);
+	expect(violations).toEqual([]);
+	// The open Tools tab, its buttons and the cursor pass axe too.
+	expect(await axeFindings(page)).toEqual([]);
+});
+
+test("without keyboardTools the tools stay pointer-only and hidden from assistive technology", async ({ page }) => {
+	const { frame, locator } = await openCalculator(page, {
+		showToolBar: "true",
+		customToolBar: "0 1 15 | 6",
+		dataViews: "false",
+	});
+	await expect(locator.locator("button.tabButton").first()).toHaveAttribute("aria-hidden", "true");
+	await locator.locator("button.tabButton").filter({ hasText: "Tools" }).click();
+	await frame.evaluate(() => window.__api.setMode(1));
+	await page.locator("#before").focus();
+	for (let press = 0; press < 12; press++) {
+		await page.keyboard.press("Tab");
+		const focused = await frame.evaluate(() => document.activeElement?.className ?? "");
+		expect(focused).not.toMatch(/tabButton|toolButton|moveFloatingBtn/);
+	}
+	await expect(locator.locator(".robotutorToolCursor")).toHaveCount(0);
+});
+
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
 	const { frame } = await openCalculator(page);
 	const updatesPerSecond = await frame.evaluate(

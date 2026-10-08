@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.geogebra.common.euclidian.EuclidianConstants;
+import org.geogebra.common.gui.AccessibilityGroup;
 import org.geogebra.common.gui.SetLabels;
 import org.geogebra.common.gui.toolbar.ToolBar;
 import org.geogebra.common.gui.toolcategorization.ToolCategory;
@@ -33,6 +34,7 @@ import org.geogebra.web.html5.gui.BaseWidgetFactory;
 import org.geogebra.web.html5.gui.tooltip.ComponentSnackbar;
 import org.geogebra.web.html5.gui.tooltip.ToolTip;
 import org.geogebra.web.html5.gui.util.AriaHelper;
+import org.geogebra.web.html5.gui.zoompanel.FocusableWidget;
 import org.geogebra.web.html5.main.AppW;
 import org.gwtproject.user.client.ui.FlowPanel;
 import org.gwtproject.user.client.ui.Label;
@@ -85,10 +87,12 @@ public final class Tools extends FlowPanel implements SetLabels {
 			if (w instanceof CategoryPanel) {
 				FlowPanel panelTools = ((CategoryPanel) w).getToolsPanel();
 				for (int j = 0; j < panelTools.getWidgetCount(); j++) {
-					if ((mode + "").equals(panelTools.getWidget(j).getElement().getAttribute("mode"))) {
-						panelTools.getWidget(j).getElement().setAttribute("selected", "true");
-					} else {
-						panelTools.getWidget(j).getElement().setAttribute("selected", "false");
+					boolean selected =
+							(mode + "").equals(panelTools.getWidget(j).getElement().getAttribute("mode"));
+					panelTools.getWidget(j).getElement().setAttribute("selected", String.valueOf(selected));
+					if (keyboardTools()) {
+						panelTools.getWidget(j).getElement()
+								.setAttribute("aria-pressed", String.valueOf(selected));
 					}
 				}
 			}
@@ -129,6 +133,18 @@ public final class Tools extends FlowPanel implements SetLabels {
 				add(catPanel);
 			}
 		}
+		if (keyboardTools()) {
+			// Robotutor: the tool buttons join the applet's keyboard order.
+			List<Widget> buttons = new ArrayList<>();
+			for (CategoryPanel panel : categoryPanelList) {
+				buttons.addAll(panel.toolButtonList);
+			}
+			new FocusableWidget(AccessibilityGroup.TOOLS, null, buttons).attachTo(app);
+		}
+	}
+
+	private boolean keyboardTools() {
+		return app.getAppletParameters().getDataParamKeyboardTools();
 	}
 
 	@Override
@@ -185,10 +201,20 @@ public final class Tools extends FlowPanel implements SetLabels {
 
 		private ToolButton getToolButton(final int mode) {
 			final ToolButton btn = new ToolButton(mode, getApp());
-			AriaHelper.hide(btn);
+			if (keyboardTools()) {
+				btn.getElement().setAttribute("aria-pressed", "false");
+			} else {
+				AriaHelper.hide(btn);
+			}
 			btn.addFastClickHandler(source -> {
 				App app = getApp();
 				app.setMode(mode);
+				if (keyboardTools()) {
+					// Robotutor: say which tool is active and what it needs, then how to click.
+					// (the graph cursor adds how to click once focus reaches it)
+					getApp().getActiveEuclidianView().getScreenReader().readText(
+							app.getToolName(mode) + ". " + app.getToolHelp(mode));
+				}
 				showTooltip(mode);
 				app.updateDynamicStyleBars();
 				Analytics.logToolSelected(app.getInternalToolName(mode));
