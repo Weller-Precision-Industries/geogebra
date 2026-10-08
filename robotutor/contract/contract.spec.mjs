@@ -666,6 +666,8 @@ test("decimalResults shows typed results as decimals first, exact form one toggl
 	};
 	expect(await typedResult("false")).toEqual({ value: "3087 / 100", toggle: "Show approximate result" });
 	expect(await typedResult("true")).toEqual({ value: "30.87", toggle: "Show result as fraction" });
+});
+
 test("the probability calculator runs in the sandbox, computes, and has no serious accessibility findings", async ({
 	page,
 }) => {
@@ -679,7 +681,7 @@ test("the probability calculator runs in the sandbox, computes, and has no serio
 		frameHeight: "700",
 	});
 	await expect(locator.getByText("Distribution").first()).toBeVisible();
-	// Standard normal, P(-1 <= X <= 1) = 0.6827 by default; P(-2 <= X <= 2) = 0.9545 after editing the bounds.
+	// Standard normal, P(-1 <= X <= 1) = 0.6827 by default.
 	await expect(locator.getByText("0.6827")).toBeVisible();
 	// Parameters are typed (GeoGebra keeps the interval at μ ± σ, so the probability holds).
 	const sigma = locator.getByRole("textbox", { name: "Parameter σ" });
