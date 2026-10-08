@@ -666,6 +666,38 @@ test("decimalResults shows typed results as decimals first, exact form one toggl
 	};
 	expect(await typedResult("false")).toEqual({ value: "3087 / 100", toggle: "Show approximate result" });
 	expect(await typedResult("true")).toEqual({ value: "30.87", toggle: "Show result as fraction" });
+test("the probability calculator runs in the sandbox, computes, and has no serious accessibility findings", async ({
+	page,
+}) => {
+	// OLMS offers it as a tool beside statistics questions (ADR-116): Suite's probability sub-app.
+	const { frame, locator, violations } = await openCalculator(page, {
+		appName: "suite",
+		subApp: "probability",
+		showAppsPicker: "false",
+		portraitPanelShare: "0.6",
+		frameWidth: "390",
+		frameHeight: "700",
+	});
+	await expect(locator.getByText("Distribution").first()).toBeVisible();
+	// Standard normal, P(-1 <= X <= 1) = 0.6827 by default; P(-2 <= X <= 2) = 0.9545 after editing the bounds.
+	await expect(locator.getByText("0.6827")).toBeVisible();
+	// Parameters are typed (GeoGebra keeps the interval at μ ± σ, so the probability holds).
+	const sigma = locator.getByRole("textbox", { name: "Parameter σ" });
+	await locator.locator(".inputTextField", { hasText: "Parameter σ" }).locator("canvas").click();
+	await page.waitForTimeout(300);
+	await sigma.press("End");
+	await sigma.press("Backspace");
+	await sigma.pressSequentially("2", { delay: 50 });
+	await sigma.press("Enter");
+	await expect(locator.getByText("0.6827")).toBeVisible();
+	// The interval type is a keyboard-operable radio group.
+	await locator.getByRole("radio", { name: "Left Sided" }).focus();
+	await page.keyboard.press("Enter");
+	await expect(locator.getByRole("radio", { name: "Left Sided" })).toHaveAttribute("aria-checked", "true");
+	await expect(locator.getByRole("radio", { name: "Interval" })).toHaveAttribute("aria-checked", "false");
+	await expect.poll(() => frame.evaluate(() => document.body.innerText)).toMatch(/P\(X ≤/);
+	expect(violations).toEqual([]);
+	expect(await axeFindings(page)).toEqual([]);
 });
 
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
