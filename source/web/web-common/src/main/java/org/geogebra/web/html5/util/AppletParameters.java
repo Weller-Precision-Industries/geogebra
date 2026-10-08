@@ -229,6 +229,16 @@ public class AppletParameters {
 	}
 
 	/**
+	 * Whether typed results first show as decimals (like a handheld scientific calculator)
+	 * instead of exact fractions and surds; the format toggle still switches each result.
+	 *
+	 * @return the data-param-decimalResults (default: false, upstream exact-first)
+	 */
+	public boolean getDataParamDecimalResults() {
+		return getBoolDataParam("decimalResults", false);
+	}
+
+	/**
 	 * Determines if the "data-param-enableRightClick" article attribute is set
 	 * to true
 	 *
