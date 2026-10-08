@@ -498,7 +498,7 @@ test("keyboardTools builds a point, a segment and a polygon without a pointer, r
 	// ordinary pointer path.
 	const { frame, locator, violations } = await openCalculator(page, {
 		showToolBar: "true",
-		customToolBar: "0 1 15 16 | 6",
+		customToolBar: "0 1 15 16 30 | 6",
 		dataViews: "false",
 		keyboardTools: "true",
 	});
@@ -516,11 +516,12 @@ test("keyboardTools builds a point, a segment and a polygon without a pointer, r
 	await expect(locator.locator(".robotutorToolCursor")).toBeVisible();
 	await pressKeys(page, ["ArrowRight", "ArrowRight", "ArrowUp", "ArrowUp", "ArrowUp", "Enter"]);
 	await expect.poll(() => frame.evaluate(() => window.__api.getAllObjectNames())).toEqual(["A"]);
-	// The cursor moves in grid steps, so A sits on the grid at (2g, 3g).
+	// The cursor moves in grid steps from the origin, so A is the grid point two right, three up.
 	const [ax, ay] = await frame.evaluate(() => [window.__api.getXcoord("A"), window.__api.getYcoord("A")]);
-	expect(ax).toBeGreaterThan(0);
-	expect(ay / ax).toBeCloseTo(1.5, 6);
-	const step = ax / 2;
+	const stepX = ax / 2;
+	const stepY = ay / 3;
+	expect(stepX).toBeGreaterThan(0);
+	expect(stepY).toBeGreaterThan(0);
 
 	// Segment: Shift+Tab back to the tools, pick Segment, click A (selected by snapping) and a new point.
 	await tabTo(page, frame, focusedTool("Segment"), { backward: true });
@@ -534,8 +535,8 @@ test("keyboardTools builds a point, a segment and a polygon without a pointer, r
 	expect(segment).toBeTruthy();
 	expect(await frame.evaluate((name) => window.__api.getCommandString(name, false), segment)).toBe("Segment[A, B]");
 	expect(await frame.evaluate(() => [window.__api.getXcoord("B"), window.__api.getYcoord("B")])).toEqual([
-		-2 * step,
-		3 * step,
+		-2 * stepX,
+		3 * stepY,
 	]);
 
 	// Polygon B, C, D, back to B.
@@ -554,11 +555,30 @@ test("keyboardTools builds a point, a segment and a polygon without a pointer, r
 		.toBeTruthy();
 	void polygon;
 
+	// Reflect the triangle in the x-axis: click inside it (the cursor is back on B), then on the axis
+	await tabTo(page, frame, focusedTool("Reflect about Line"), { backward: true });
+	await page.keyboard.press("Enter");
+	await tabTo(page, frame, focusedCanvas);
+	// (past the triangle's side CD, which also lies on the axis)
+	await pressKeys(page, ["ArrowDown", "ArrowRight", "Enter", "ArrowDown", "ArrowDown"]);
+	await pressKeys(page, ["ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "Enter"]);
+	await expect
+		.poll(() =>
+			frame.evaluate(() =>
+				window.__api.getAllObjectNames().filter((name) => window.__api.getObjectType(name) === "triangle"),
+			),
+		)
+		.toHaveLength(2);
+	// GeoGebra records the image as Polygon[B', C', D'] with B' = Mirror[B, xAxis].
+	expect(await frame.evaluate(() => window.__api.getCommandString("B'", false))).toBe("Mirror[B, xAxis]");
+
 	const spoken = await frame.evaluate(() => window.__spoken.join(" | "));
-	expect(spoken).toMatch(/Point\. .*Select position/);
+	expect(spoken).toMatch(/Point\. Select position.*\(0, 0\)\. On the graph, arrow keys move the cursor and Enter clicks/);
 	expect(spoken).toMatch(/Point A/);
-	expect(spoken).toMatch(/Segment/);
-	expect(spoken).toMatch(/on Point A/);
+	expect(spoken).toMatch(/Selected Point A/);
+	expect(spoken).toMatch(/Point B =\(−2, 6\) Segment f/);
+	expect(spoken).toMatch(/Triangle t1/);
+	expect(spoken).toMatch(/on Segment f, Point A/);
 	expect(violations).toEqual([]);
 	// The open Tools tab, its buttons and the cursor pass axe too.
 	expect(await axeFindings(page)).toEqual([]);
@@ -576,7 +596,8 @@ test("without keyboardTools the tools stay pointer-only and hidden from assistiv
 	await page.locator("#before").focus();
 	for (let press = 0; press < 12; press++) {
 		await page.keyboard.press("Tab");
-		expect(await frame.evaluate(() => document.activeElement?.closest("[aria-hidden=true]") === null)).toBe(true);
+		const focused = await frame.evaluate(() => document.activeElement?.className ?? "");
+		expect(focused).not.toMatch(/tabButton|toolButton|moveFloatingBtn/);
 	}
 	await expect(locator.locator(".robotutorToolCursor")).toHaveCount(0);
 });

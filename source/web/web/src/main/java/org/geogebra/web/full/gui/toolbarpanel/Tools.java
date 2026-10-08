@@ -211,10 +211,9 @@ public final class Tools extends FlowPanel implements SetLabels {
 				app.setMode(mode);
 				if (keyboardTools()) {
 					// Robotutor: say which tool is active and what it needs, then how to click.
+					// (the graph cursor adds how to click once focus reaches it)
 					getApp().getActiveEuclidianView().getScreenReader().readText(
-							app.getToolName(mode) + ". " + app.getToolHelp(mode) + " "
-							+ app.getLocalization().getMenuDefault("robotutor.ToolCursorHelp",
-							"On the graph, arrow keys move the cursor and Enter clicks."));
+							app.getToolName(mode) + ". " + app.getToolHelp(mode));
 				}
 				showTooltip(mode);
 				app.updateDynamicStyleBars();

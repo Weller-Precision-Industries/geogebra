@@ -566,6 +566,9 @@ public final class ToolbarPanel extends FlowPanel
 	private void addMoveBtn() {
 		moveBtn = new StandardButton(MaterialDesignResources.INSTANCE.mode_move(), null, 24);
 		AriaHelper.hide(moveBtn);
+		// Robotutor: outside the applet's keyboard order (keyboardTools users have the Move tool
+		// button), so not focusable while aria-hidden.
+		moveBtn.getElement().setTabIndex(-1);
 		String altText =
 				app.getLocalization().getMenu(EuclidianConstants.getModeText(EuclidianConstants.MODE_MOVE))
 						+ ". " + app.getToolHelp(EuclidianConstants.MODE_MOVE);

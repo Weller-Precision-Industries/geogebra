@@ -60,6 +60,8 @@ public class KeyboardToolCursor implements FocusableComponent {
 
 	private static final int MARKER_SIZE = 22;
 	private static final int FINE_STEPS = 10;
+	/** A focus this soon after a pointer press came from the pointer, not the keyboard. */
+	private static final double POINTER_FOCUS_MS = 500;
 
 	private final AppW app;
 	private final SimplePanel marker = new SimplePanel();
@@ -67,6 +69,7 @@ public class KeyboardToolCursor implements FocusableComponent {
 	private double y;
 	private boolean placed;
 	private boolean active;
+	private double lastPointerDown = -POINTER_FOCUS_MS;
 
 	/**
 	 * @param app application with data-param-keyboardTools
@@ -89,7 +92,17 @@ public class KeyboardToolCursor implements FocusableComponent {
 				deactivate();
 			}
 		}, 0));
-		canvas.addEventListener("pointerdown", event -> deactivate());
+		canvas.addEventListener("pointerdown", event -> {
+			lastPointerDown = DomGlobal.performance.now();
+			deactivate();
+		});
+		// Choosing a tool (or any keyboard route) can focus the graph directly: the cursor is there.
+		canvas.addEventListener("focus", event -> {
+			if (!active && isConstructionMode(app.getMode())
+					&& DomGlobal.performance.now() - lastPointerDown > POINTER_FOCUS_MS) {
+				activate();
+			}
+		});
 	}
 
 	private EuclidianViewW view() {
@@ -116,16 +129,21 @@ public class KeyboardToolCursor implements FocusableComponent {
 		if (!isConstructionMode(app.getMode()) || canvas().offsetParent == null) {
 			return false;
 		}
+		activate();
+		canvas().focus();
+		return true;
+	}
+
+	private void activate() {
 		if (!placed || !isInView()) {
 			placeAtStart();
 		}
 		active = true;
-		canvas().focus();
 		showMarker();
-		announce(app.getToolName(app.getMode()) + ". " + position() + ". "
+		int mode = app.getMode();
+		announce(app.getToolName(mode) + ". " + app.getToolHelp(mode) + ". " + position() + ". "
 				+ app.getLocalization().getMenuDefault("robotutor.ToolCursorHelp",
 				"On the graph, arrow keys move the cursor and Enter clicks."));
-		return true;
 	}
 
 	@Override
