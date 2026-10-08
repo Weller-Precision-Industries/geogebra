@@ -624,6 +624,41 @@ test("keyboardTools builds a point, a segment and a polygon without a pointer, r
 	expect(await axeFindings(page)).toEqual([]);
 });
 
+test("the keyboard cursor survives an embedder resizing the applet after each new object", async ({ page }) => {
+	// OLMS refits its panel (api.setSize) when an object is added; that drops focus to the body
+	// for a moment, which used to end the cursor after the first point.
+	const { frame, locator } = await openCalculator(page, {
+		showToolBar: "true",
+		customToolBar: "0 1 15 | 6",
+		dataViews: "false",
+		keyboardTools: "true",
+		frameWidth: "390",
+		frameHeight: "700",
+	});
+	await frame.evaluate(() => {
+		let grow = 0;
+		window.__api.registerAddListener(() =>
+			window.setTimeout(() => {
+				const input = document.activeElement;
+				window.__api.setSize(window.innerWidth, window.innerHeight - (grow++ % 2));
+				window.setTimeout(() => input?.focus(), 50);
+			}, 60),
+		);
+	});
+	await locator.locator("button.tabButton").filter({ hasText: "Tools" }).click();
+	await locator.locator('button[aria-label^="Point. "]').focus();
+	await page.keyboard.press("Tab");
+	await page.keyboard.press("Shift+Tab");
+	await page.keyboard.press("Enter");
+	await expect(locator.locator(".robotutorToolCursor")).toBeVisible();
+	for (const key of ["ArrowUp", "Enter", "ArrowRight", "ArrowRight", "Enter", "ArrowDown", "Enter"]) {
+		await page.keyboard.press(key);
+		await page.waitForTimeout(250);
+	}
+	await expect.poll(() => frame.evaluate(() => window.__api.getAllObjectNames().length)).toBe(3);
+	await expect(locator.locator(".robotutorToolCursor")).toBeVisible();
+});
+
 test("without keyboardTools the tools stay pointer-only and hidden from assistive technology", async ({ page }) => {
 	const { frame, locator } = await openCalculator(page, {
 		showToolBar: "true",

@@ -88,10 +88,12 @@ public class KeyboardToolCursor implements FocusableComponent {
 				+ "box-shadow:0 0 0 2px #fff;display:none;z-index:1";
 		HTMLElement canvas = canvas();
 		canvas.addEventListener("keydown", this::onKeyDown, true);
-		// Reading text focuses GeoGebra's live region and then the canvas again: only a focus
-		// that stays elsewhere ends the cursor.
+		// Reading text focuses GeoGebra's live region and then the canvas again, and an embedder
+		// resizing the applet (OLMS refits its panel when an object is added) drops focus to the
+		// page body before restoring it: only focus that moves to another control ends the cursor.
 		canvas.addEventListener("blur", event -> DomGlobal.setTimeout(ignore -> {
-			if (DomGlobal.document.activeElement != canvas()) {
+			elemental2.dom.Element active = DomGlobal.document.activeElement;
+			if (active != null && active != canvas() && active != DomGlobal.document.body) {
 				deactivate();
 			}
 		}, 0));
