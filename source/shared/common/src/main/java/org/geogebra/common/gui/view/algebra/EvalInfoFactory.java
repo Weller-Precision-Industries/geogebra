@@ -37,6 +37,8 @@ public class EvalInfoFactory {
 	 */
 	public static EvalInfo getEvalInfoForAV(App app, boolean withSliders) {
 		return baseAVInfo
+				// Robotutor decimalResults: skip the exact-first display; the toggle still switches.
+				.withSymbolic(!app.isDecimalResults())
 				.withSliders(withSliders)
 				.addDegree(app.getKernel().getAngleUnitUsesDegrees())
 				.withSymbolicMode(app.getKernel().getSymbolicMode())

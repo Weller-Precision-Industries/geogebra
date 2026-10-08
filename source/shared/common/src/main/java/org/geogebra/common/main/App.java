@@ -430,6 +430,8 @@ public abstract class App
 	protected final @NonNull AppCompanion companion;
 
 	private boolean showResetIcon = false;
+	/** Robotutor decimalResults: typed results start as decimals instead of exact values. */
+	private boolean decimalResults = false;
 	private ParserFunctions pf;
 	private ParserFunctions pfInputBox;
 	private SpreadsheetTraceManager traceManager;
@@ -3949,7 +3951,22 @@ public abstract class App
 		return getGuiManager() == null ? null : getGuiManager().getLayout();
 	}
 
-	public StringTemplate getScreenReaderTemplate() {
+	/**
+	 * @return whether typed results start as decimals (Robotutor decimalResults)
+	 */
+	public boolean isDecimalResults() {
+		return decimalResults;
+	}
+
+	/**
+	 * @param decimalResults whether typed results start as decimals instead of exact values;
+	 *        the output format toggle still switches each one
+	 */
+	public void setDecimalResults(boolean decimalResults) {
+		this.decimalResults = decimalResults;
+	}
+
+		public StringTemplate getScreenReaderTemplate() {
 		return StringTemplate.screenReaderAscii;
 	}
 

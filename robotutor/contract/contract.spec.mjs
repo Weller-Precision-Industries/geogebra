@@ -642,6 +642,32 @@ test("without keyboardTools the tools stay pointer-only and hidden from assistiv
 	await expect(locator.locator(".robotutorToolCursor")).toHaveCount(0);
 });
 
+test("decimalResults shows typed results as decimals first, exact form one toggle away", async ({ page }) => {
+	// Fork patch: like a handheld scientific calculator (OLMS offers the scientific app as a tool).
+	const typedResult = async (decimalResults) => {
+		const { frame, locator } = await openCalculator(page, {
+			appName: "scientific",
+			showKeyboardOnFocus: "true",
+			decimalResults,
+			frameWidth: "720",
+			frameHeight: "430",
+		});
+		await locator.locator(".algebraView").first().click();
+		await expect(locator.locator(".TabbedKeyBoard")).toBeVisible();
+		await page.waitForTimeout(500);
+		await page.keyboard.type("0.5*3.5*4.2^2", { delay: 20 });
+		await page.keyboard.press("Enter");
+		await expect(locator.locator(".avItem button[aria-label^='Show ']")).toHaveCount(1);
+		return frame.evaluate(() => {
+			const names = window.__api.getAllObjectNames();
+			const toggle = document.querySelector(".avItem button[aria-label^='Show ']");
+			return { value: window.__api.getValueString(names[names.length - 1]), toggle: toggle?.getAttribute("aria-label") };
+		});
+	};
+	expect(await typedResult("false")).toEqual({ value: "3087 / 100", toggle: "Show approximate result" });
+	expect(await typedResult("true")).toEqual({ value: "30.87", toggle: "Show result as fraction" });
+});
+
 test("animates at display rate (fork patch: 60 fps cap, frame-synced timer)", async ({ page }) => {
 	const { frame } = await openCalculator(page);
 	const updatesPerSecond = await frame.evaluate(
