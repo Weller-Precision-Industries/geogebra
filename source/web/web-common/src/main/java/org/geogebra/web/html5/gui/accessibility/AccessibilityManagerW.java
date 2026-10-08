@@ -68,6 +68,7 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 	private final TreeSet<FocusableComponent> components = new TreeSet<>(componentComparator);
 	private final Set<FocusableComposite> compositeFocusOwners = new HashSet<>();
 	private FocusableComposite activeCompositeFocus;
+	private @Nullable KeyboardToolCursor toolCursor;
 
 	/**
 	 * Constructor.
@@ -87,7 +88,8 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 		components.add(new PlayButtonTabber(app.getActiveEuclidianView()));
 		components.add(new ResetButtonTabber(app.getActiveEuclidianView()));
 		if (app.getAppletParameters().getDataParamKeyboardTools()) {
-			components.add(new KeyboardToolCursor(app));
+			toolCursor = new KeyboardToolCursor(app);
+			components.add(toolCursor);
 		}
 		List<String> externalControlSelectors = Arrays.stream(
 						app.getAppletParameters().getParamExternalControls().split(","))
@@ -227,6 +229,16 @@ public class AccessibilityManagerW implements AccessibilityManagerInterface {
 			activeCompositeFocus.blur();
 		}
 		activeCompositeFocus = null;
+	}
+
+	/**
+	 * Robotutor keyboardTools: a tool was chosen from the keyboard, so the graph cursor starts
+	 * once the graph has focus.
+	 */
+	public void armToolCursor() {
+		if (toolCursor != null) {
+			toolCursor.arm();
+		}
 	}
 
 	@Override

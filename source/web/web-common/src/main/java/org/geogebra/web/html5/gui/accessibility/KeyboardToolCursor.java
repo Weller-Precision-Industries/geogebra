@@ -62,6 +62,8 @@ public class KeyboardToolCursor implements FocusableComponent {
 	private static final int FINE_STEPS = 10;
 	/** A focus this soon after a pointer press came from the pointer, not the keyboard. */
 	private static final double POINTER_FOCUS_MS = 500;
+	/** How long a tool chosen from the keyboard waits for the graph to take focus. */
+	private static final double ARMED_MS = 1000;
 
 	private final AppW app;
 	private final SimplePanel marker = new SimplePanel();
@@ -70,6 +72,7 @@ public class KeyboardToolCursor implements FocusableComponent {
 	private boolean placed;
 	private boolean active;
 	private double lastPointerDown = -POINTER_FOCUS_MS;
+	private double armedAt = -ARMED_MS;
 
 	/**
 	 * @param app application with data-param-keyboardTools
@@ -96,10 +99,14 @@ public class KeyboardToolCursor implements FocusableComponent {
 			lastPointerDown = DomGlobal.performance.now();
 			deactivate();
 		});
-		// Choosing a tool (or any keyboard route) can focus the graph directly: the cursor is there.
+		// Choosing a tool from the keyboard focuses the graph directly: the cursor is there. Only
+		// that route: GeoGebra also refocuses the graph while Tab walks its objects, and
+		// reactivating then would trap Tab between the cursor and the first object.
 		canvas.addEventListener("focus", event -> {
-			if (!active && isConstructionMode(app.getMode())
+			if (!active && DomGlobal.performance.now() - armedAt < ARMED_MS
+					&& isConstructionMode(app.getMode())
 					&& DomGlobal.performance.now() - lastPointerDown > POINTER_FOCUS_MS) {
+				armedAt = -ARMED_MS;
 				activate();
 			}
 		});
@@ -122,6 +129,18 @@ public class KeyboardToolCursor implements FocusableComponent {
 				&& mode != EuclidianConstants.MODE_SELECTION_LISTENER
 				&& mode != EuclidianConstants.MODE_MOVE_ROTATE
 				&& mode != EuclidianConstants.MODE_TRANSLATE_VIEW;
+	}
+
+	/**
+	 * A tool was chosen from the keyboard: when the graph takes focus next, the cursor starts.
+	 * If it already has focus, the cursor starts now.
+	 */
+	public void arm() {
+		if (DomGlobal.document.activeElement == canvas() && isConstructionMode(app.getMode())) {
+			activate();
+		} else {
+			armedAt = DomGlobal.performance.now();
+		}
 	}
 
 	@Override

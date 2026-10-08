@@ -31,6 +31,7 @@ import org.geogebra.common.util.debug.Analytics;
 import org.geogebra.gwtutil.NavigatorUtil;
 import org.geogebra.web.full.gui.toolbar.ToolButton;
 import org.geogebra.web.html5.gui.BaseWidgetFactory;
+import org.geogebra.web.html5.gui.accessibility.AccessibilityManagerW;
 import org.geogebra.web.html5.gui.tooltip.ComponentSnackbar;
 import org.geogebra.web.html5.gui.tooltip.ToolTip;
 import org.geogebra.web.html5.gui.util.AriaHelper;
@@ -214,6 +215,11 @@ public final class Tools extends FlowPanel implements SetLabels {
 					// (the graph cursor adds how to click once focus reaches it)
 					getApp().getActiveEuclidianView().getScreenReader().readText(
 							app.getToolName(mode) + ". " + app.getToolHelp(mode));
+					// chosen from the keyboard (FocusableWidget marks keyboard focus): start the cursor
+					if (btn.getElement().hasClassName("keyboardFocus")
+							&& getApp().getAccessibilityManager() instanceof AccessibilityManagerW manager) {
+						manager.armToolCursor();
+					}
 				}
 				showTooltip(mode);
 				app.updateDynamicStyleBars();
