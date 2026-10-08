@@ -57,6 +57,12 @@ public enum AccessibilityGroup {
 	PAGE_LIST_OPEN,
 	SPREADSHEET,
 	ALT_GEOTEXT,
+	/** Robotutor keyboardTools: the tab rail (Algebra, Tools). */
+	NAVIGATION_RAIL,
+	/** Robotutor keyboardTools: the tool buttons of the open Tools tab. */
+	TOOLS,
+	/** Robotutor keyboardTools: the graphics view cursor while a construction tool is active. */
+	TOOL_CURSOR,
 	GEO_ELEMENT,
 	EXTERNAL,
 	DEFINE_FUNCTIONS,

@@ -217,6 +217,18 @@ public class AppletParameters {
 	}
 
 	/**
+	 * Whether the tool rail, the tool buttons and the graphics view are operable from the
+	 * keyboard: tools join the focus order, and with a construction tool active the graphics
+	 * view offers a cursor (arrow keys move it, Enter or Space clicks there), announced to
+	 * screen readers.
+	 *
+	 * @return the data-param-keyboardTools (default: false, upstream pointer-only tools)
+	 */
+	public boolean getDataParamKeyboardTools() {
+		return getBoolDataParam("keyboardTools", false);
+	}
+
+	/**
 	 * Determines if the "data-param-enableRightClick" article attribute is set
 	 * to true
 	 *
