@@ -572,6 +572,19 @@ test("keyboardTools builds a point, a segment and a polygon without a pointer, r
 	// GeoGebra records the image as Polygon[B', C', D'] with B' = Mirror[B, xAxis].
 	expect(await frame.evaluate(() => window.__api.getCommandString("B'", false))).toBe("Mirror[B, xAxis]");
 
+	// Tab walks on from the graph (through the objects) and leaves the applet: no keyboard trap.
+	await frame.evaluate(() => {
+		window.__events.length = 0;
+	});
+	for (let press = 0; press < 25; press++) {
+		if (await frame.evaluate(() => window.__events.some((event) => event.type === "tabExit"))) break;
+		await page.keyboard.press("Tab");
+		await page.waitForTimeout(60);
+	}
+	expect(await frame.evaluate(() => window.__events.filter((event) => event.type === "tabExit"))).toEqual([
+		{ type: "tabExit", argument: "forward" },
+	]);
+
 	const spoken = await frame.evaluate(() => window.__spoken.join(" | "));
 	expect(spoken).toMatch(/Point\. Select position.*\(0, 0\)\. On the graph, arrow keys move the cursor and Enter clicks/);
 	expect(spoken).toMatch(/Point A/);
